@@ -11,7 +11,10 @@ from pathlib import Path
 ROOT_DIR        = Path(__file__).resolve().parent
 DATA_DIR        = ROOT_DIR / "data"
 SQL_DIR         = ROOT_DIR / "sql"
-MODELS_DIR      = ROOT_DIR / "models"
+
+# 🔥 FIXED (important for Streamlit cloud)
+MODELS_DIR      = Path("models")
+
 SRC_DIR         = ROOT_DIR / "src"
 
 DB_PATH               = DATA_DIR / "study.db"
