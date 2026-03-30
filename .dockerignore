@@ -1,0 +1,23 @@
+# Git and cache folders
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+
+# Virtual environment
+.venv
+venv
+env
+
+# Local configuration
+.env
+
+# SQLite local database (don't bake user data into the image)
+data/*.db
+study.db
+
+# Notebooks and dev tools
+notebooks/
+tests/
