@@ -25,7 +25,7 @@ def send_otp_email(to_email: str, code: str) -> bool:
 
     msg = EmailMessage()
     msg["Subject"] = "Your AI Study Tracker OTP"
-    msg["From"]    = from_email
+    msg["From"]    = f"ZenStudy OTP <{from_email}>"
     msg["To"]      = to_email
     msg.set_content(
         f"Your one-time login code is: {code}\n\n"
