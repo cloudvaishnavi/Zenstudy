@@ -3,8 +3,8 @@ app.py - ZenStudy AI Study Tracker
 Run: streamlit run app.py
 """
 from __future__ import annotations
-from dotenv import load_dotenv
-load_dotenv()
+#from dotenv import load_dotenv
+#load_dotenv()
 
 import sys, secrets
 from pathlib import Path
