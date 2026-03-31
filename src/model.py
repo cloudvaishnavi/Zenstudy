@@ -1,16 +1,19 @@
 """
 src/model.py - ML model loaders.
-Handles missing, corrupted, or empty model files gracefully.
+Optimized for Streamlit Cloud (low memory + caching).
 """
-from __future__ import annotations
 
+from __future__ import annotations
 from pathlib import Path
 import joblib
+import streamlit as st
 
 
+# 🚀 Cached loading to prevent memory crash
+
+@st.cache_resource
 def load_focus_model(model_path: Path):
-    """Load the focus score regression pipeline.
-    Returns None if not trained yet or if file is corrupted."""
+    """Load the focus score regression pipeline."""
     try:
         if not model_path.exists():
             print(f"[DEBUG] Focus model NOT found at: {model_path}")
@@ -24,9 +27,9 @@ def load_focus_model(model_path: Path):
         return None
 
 
+@st.cache_resource
 def load_distraction_model(model_path: Path):
-    """Load the distraction classifier pipeline.
-    Returns None if not trained yet or if file is corrupted."""
+    """Load the distraction classifier pipeline."""
     try:
         if not model_path.exists():
             print(f"[DEBUG] Distraction model NOT found at: {model_path}")
