@@ -4,6 +4,7 @@ pages/ai_insights.py — professional AI Behavior Pattern Analyzer
 from __future__ import annotations
 
 import time
+import textwrap
 import pandas as pd
 import streamlit as st
 from datetime import datetime
@@ -21,7 +22,7 @@ from config import FOCUS_MODEL_PATH, DISTRACTION_MODEL_PATH
 
 def _render_score_card(score: float, label: str, icon: str, color_var: str):
     """Render a premium score card with a progress bar."""
-    st.markdown(f"""
+    st.markdown(textwrap.dedent(f"""
     <div class="premium-card" style="height: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{label}</div>
@@ -34,7 +35,7 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
             <div style="width: {score}%; height: 100%; background: var({color_var}); border-radius: 99px; box-shadow: 0 0 10px var({color_var});"></div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
 
 def _render_list_card(title: str, items: list[str], icon: str):
@@ -56,7 +57,7 @@ def _render_list_card(title: str, items: list[str], icon: str):
             </div>
         """
     html += "</div></div>"
-    st.markdown(html, unsafe_allow_html=True)
+    st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
@@ -179,7 +180,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with c4: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(f"""
+            st.markdown(textwrap.dedent(f"""
             <div class="premium-card">
                 <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
                     <div style="font-size: 1.4rem;">🧠</div>
@@ -189,7 +190,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
 {latest["explanation"]}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """), unsafe_allow_html=True)
         else:
             st.info("No analysis data available. Click 'Start Analysis' above to get your first AI report.")
 
