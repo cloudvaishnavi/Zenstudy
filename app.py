@@ -40,6 +40,7 @@ st.set_page_config(
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={'Get Help': None, 'Report a bug': None, 'About': None}
 )
 
 inject_css()
@@ -335,7 +336,23 @@ with st.sidebar:
     st.markdown("<hr style='border-color:#27272a;margin:0.7rem 0'>",
                 unsafe_allow_html=True)
 
+    # Theme Toggle
+    st.markdown("**Appearance**")
+    if "light_mode" not in st.session_state:
+        st.session_state["light_mode"] = False
     
+    label_theme = "🌙 Dark Mode" if not st.session_state["light_mode"] else "☀️ Light Mode"
+    if st.toggle(label_theme, value=st.session_state["light_mode"], key="theme_toggle"):
+        if not st.session_state["light_mode"]:
+            st.session_state["light_mode"] = True
+            st.rerun()
+    else:
+        if st.session_state["light_mode"]:
+            st.session_state["light_mode"] = False
+            st.rerun()
+
+    st.markdown("<hr style='border-color:#27272a;margin:0.7rem 0'>",
+                unsafe_allow_html=True)
 
     st.markdown("<hr style='border-color:#27272a;margin:0.7rem 0'>",
                 unsafe_allow_html=True)
@@ -392,11 +409,11 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════
 greeting = "Stay focused and push your limits!"
 
-is_light =  False
+is_light =  st.session_state.get("light_mode", False)
 c_text1 = "#0f172a" if is_light else "#fafafa"
-c_text2 = "#64748b" if is_light else "#a1a1aa"
-c_border = "rgba(0,0,0,0.1)" if is_light else "rgba(255,255,255,0.08)"
-c_pill = "rgba(0,0,0,0.05)" if is_light else "rgba(255,255,255,0.05)"
+c_text2 = "#475569" if is_light else "#a1a1aa"
+c_border = "rgba(0,0,0,0.06)" if is_light else "rgba(255,255,255,0.08)"
+c_pill = "rgba(14, 165, 233, 0.1)" if is_light else "rgba(56, 189, 248, 0.08)"
 
 st.markdown(f"""
 <div style="display:flex;flex-direction:column;gap:0.4rem;padding-bottom:1.5rem;margin-bottom:1.5rem;border-bottom:1px solid {c_border}">
@@ -413,7 +430,7 @@ st.markdown(f"""
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.3rem;flex-wrap:wrap;gap:0.5rem;">
       <div style="font-size:0.85rem;color:{c_text2};font-weight:500;">Your AI-Powered Study Analytics & Habit Tracker</div>
-      <div style="font-size:0.75rem;color:{c_text2};padding:0.2rem 0.6rem;background:{c_pill};border-radius:99px;border:1px solid {c_border};">Session Active</div>
+      <div class="pulse-pill" style="font-size:0.75rem;color:#38bdf8;padding:0.2rem 0.8rem;background:{c_pill};border-radius:99px;font-weight:700;letter-spacing:0.05em;">Session Active</div>
   </div>
 </div>
 """, unsafe_allow_html=True)

@@ -57,13 +57,41 @@ def inject_css() -> None:
         --shadow:    0 8px 32px 0 rgba(0, 0, 0, 0.3);
     }
 
+    [data-theme="light"] {
+        --bg:        #f8fafc;
+        --surface:   rgba(255, 255, 255, 0.8);
+        --surface2:  rgba(241, 245, 249, 0.9);
+        --surface3:  rgba(226, 232, 240, 0.95);
+        --border:    rgba(0, 0, 0, 0.06);
+        --border2:   rgba(0, 0, 0, 0.1);
+        --blue:      #0ea5e9;
+        --blue-dark: #0284c7;
+        --teal:      #0d9488;
+        --teal-dark: #0f766e;
+        --purple:    #7c3aed;
+        --text:      #0f172a;
+        --text2:     #475569;
+        --text3:     #64748b;
+        --shadow:    0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    }
+
     html, body, [data-testid="stAppViewContainer"] {
         background-color: var(--bg) !important;
-        background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.06), transparent 25%),
-                          radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.06), transparent 25%) !important;
+        background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%),
+                          radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.08), transparent 25%) !important;
         color: var(--text) !important;
         font-family: 'Inter', sans-serif !important;
+        transition: background-color 0.4s ease !important;
     }
+
+    header[data-testid="stHeader"], 
+    [data-testid="stToolbar"], 
+    .stDeployButton, 
+    #GithubIcon { 
+        visibility: hidden !important; 
+        display: none !important; 
+    }
+    #MainMenu, footer { visibility: hidden !important; display: none !important; }
 
     /* Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
@@ -275,7 +303,18 @@ def inject_css() -> None:
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
     }
+    /* ── Pulse Animation ── */
+    @keyframes neon-pulse {
+        0% { box-shadow: 0 0 5px var(--blue), inset 0 0 5px var(--blue); }
+        50% { box-shadow: 0 0 20px var(--blue), inset 0 0 10px var(--blue); }
+        100% { box-shadow: 0 0 5px var(--blue), inset 0 0 5px var(--blue); }
+    }
+    .pulse-pill {
+        animation: neon-pulse 2s infinite ease-in-out;
+        border: 1px solid var(--blue) !important;
+    }
     </style>
+    <div data-theme="{'light' if st.session_state.get('light_mode') else 'dark'}"></div>
     """, unsafe_allow_html=True)
 
 
