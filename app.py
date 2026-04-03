@@ -417,7 +417,20 @@ if col_btn.button("☰", type="secondary", use_container_width=True):
     if hasattr(st, "sidebar_toggle"):
         st.sidebar_toggle()
     else:
-        st.warning("Sidebar toggle is not supported in this version of Streamlit. Please use the default toggle button at the top left.")
+        # Fallback: Use JS to click the native Streamlit toggle button
+        from streamlit.components.v1 import html
+        html("""
+            <script>
+                const buttons = window.parent.document.getElementsByTagName('button');
+                for (let i = 0; i < buttons.length; i++) {
+                    if (buttons[i].getAttribute('aria-label') === 'Open sidebar' || 
+                        buttons[i].getAttribute('data-testid') === 'collapsedControl') {
+                        buttons[i].click();
+                        break;
+                    }
+                }
+            </script>
+        """, height=0)
 
 # ── Landing Hero Section ──────────────────────────────────────────
 st.markdown(f"""
