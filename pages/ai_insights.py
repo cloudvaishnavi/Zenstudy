@@ -4,7 +4,6 @@ pages/ai_insights.py — professional AI Behavior Pattern Analyzer
 from __future__ import annotations
 
 import time
-import textwrap
 import pandas as pd
 import streamlit as st
 from datetime import datetime
@@ -19,190 +18,162 @@ from src.utils import (
 from components.style import section_header
 from config import FOCUS_MODEL_PATH, DISTRACTION_MODEL_PATH
 
+def _clean_html(html_str: str) -> str:
+    """Helper to ensure HTML strings are completely flat and safe for Streamlit."""
+    return "".join([line.strip() for line in html_str.splitlines()])
 
 def _render_score_card(score: float, label: str, icon: str, color_var: str):
     """Render a premium score card with a progress bar."""
-    html = (
-        f'<div class="premium-card" style="height: 100%;">'
-        f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">'
-        f'<div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{label}</div>'
-        f'<div style="font-size: 1.5rem;">{icon}</div>'
-        f'</div>'
-        f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 3rem; font-weight: 800; color: var({color_var}); line-height: 1; margin-bottom: 0.5rem;">'
-        f'{score:.0f}<span style="font-size: 1.2rem; color: var(--text-dim); font-weight: 500;">/100</span>'
-        f'</div>'
-        f'<div style="background: var(--surface); border-radius: 99px; height: 10px; overflow: hidden; margin-top: 1.5rem;">'
-        f'<div style="width: {score}%; height: 100%; background: var({color_var}); border-radius: 99px; box-shadow: 0 0 10px var({color_var});"></div>'
-        f'</div>'
-        f'</div>'
-    )
-    st.html(html)
-
+    html = f"""
+    <div class="premium-card" style="height: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{label}</div>
+            <div style="font-size: 1.5rem;">{icon}</div>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-size: 3rem; font-weight: 800; color: var({color_var}); line-height: 1; margin-bottom: 0.5rem;">
+            {score:.0f}<span style="font-size: 1.2rem; color: var(--text-dim); font-weight: 500;">/100</span>
+        </div>
+        <div style="background: var(--surface); border-radius: 99px; height: 10px; overflow: hidden; margin-top: 1.5rem;">
+            <div style="width: {score}%; height: 100%; background: var({color_var}); border-radius: 99px; box-shadow: 0 0 10px var({color_var});"></div>
+        </div>
+    </div>
+    """
+    st.markdown(_clean_html(html), unsafe_allow_html=True)
 
 def _render_list_card(title: str, items: list[str], icon: str):
     """Render a card with a list of items and icons."""
-    html = (
-        f'<div class="premium-card" style="height: 100%;">'
-        f'<div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">'
-        f'<div style="font-size: 1.4rem;">{icon}</div>'
-        f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">{title}</div>'
-        f'</div>'
-        f'<div style="display: flex; flex-direction: column; gap: 1rem;">'
-    )
+    content_html = ""
     for item in items:
-        clean_item = item.strip().replace("●", "").strip()
+        clean_item = item.strip().replace("●", "").replace("*", "").strip()
         if not clean_item: continue
-        html += (
-            f'<div style="display: flex; gap: 0.8rem; align-items: flex-start;">'
-            f'<div style="color: var(--blue); margin-top: 0.2rem;">●</div>'
-            f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>'
-            f'</div>'
-        )
-    html += "</div></div>"
-    st.html(html)
-
+        content_html += f"""
+            <div style="display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 0.8rem;">
+                <div style="color: var(--blue); margin-top: 0.2rem;">●</div>
+                <div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>
+            </div>
+        """
+    
+    wrapper_html = f"""
+    <div class="premium-card" style="height: 100%;">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">
+            <div style="font-size: 1.4rem;">{icon}</div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">{title}</div>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            {content_html}
+        </div>
+    </div>
+    """
+    st.markdown(_clean_html(wrapper_html), unsafe_allow_html=True)
 
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
-    
     # ── Header ──────────────────────────────────────────────────
-    st.markdown(
-        f'<div style="margin-bottom: 2.5rem;">'
-        f'<h2 style="font-family: \'Space Grotesk\', sans-serif; font-weight: 800; color: var(--text); letter-spacing: -0.02em;">'
-        f'AI Behavior <span style="color: var(--blue);">Insights</span>'
-        f'</h2>'
-        f'<p style="color: var(--text-dim); font-size: 1.05rem;">'
-        f'Advanced pattern detection and productivity forecasting.'
-        f'</p>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
+    header_html = """
+    <div style="margin-bottom: 2.5rem;">
+        <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--text); letter-spacing: -0.02em;">
+            AI Behavior <span style="color: var(--blue);">Insights</span>
+        </h2>
+        <p style="color: var(--text-dim); font-size: 1.05rem;">
+            Advanced pattern detection and productivity forecasting.
+        </p>
+    </div>
+    """
+    st.markdown(_clean_html(header_html), unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["⚡ Run Analysis", "📜 Analysis History"])
 
     with tab1:
-        # ── Analysis Controls ───────────────────────────────────────
         st.markdown('<div class="premium-card">', unsafe_allow_html=True)
         st.markdown('<div style="font-family: \'Space Grotesk\', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text);">Analysis Parameters</div>', unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
-        sub  = c1.selectbox("Current Subject", SUBJECTS, key="ana_sub")
-        tech = c2.selectbox("Preferred Technique", TECHNIQUES, key="ana_tech")
-        dur  = c3.number_input("Target Duration (min)", min_value=10, step=5, value=60, key="ana_dur")
+        sub  = c1.selectbox("Current Subject", SUBJECTS, key="ana_sub_v2")
+        tech = c2.selectbox("Preferred Technique", TECHNIQUES, key="ana_tech_v2")
+        dur  = c3.number_input("Target Duration (min)", min_value=10, step=5, value=60, key="ana_dur_v2")
         
         c4, c5 = st.columns([1, 1])
-        mood = c4.slider("Current Mood", 1, 5, 4, key="ana_mood")
-        caf  = c5.number_input("Caffeine Intake (mg)", min_value=0, step=10, value=100, key="ana_caf")
+        mood = c4.slider("Current Mood", 1, 5, 4, key="ana_mood_v2")
+        caf  = c5.number_input("Caffeine Intake (mg)", min_value=0, step=10, value=100, key="ana_caf_v2")
         
-        if st.button("Start Analysis 🚀", type="primary", use_container_width=True):
-            # ── Step 1: Loading ──
-            progress_placeholder = st.empty()
+        if st.button("Start Analysis 🚀", type="primary", use_container_width=True, key="ana_btn_v3"):
             status_placeholder = st.empty()
+            progress_bar = st.progress(0)
             
-            steps = [
-                "🔐 Processing input securely...",
-                "🔍 Scanning study history patterns...",
-                "🧠 Running focus prediction model...",
-                "📈 Assessing distraction risks...",
-                "✨ Generating personalized insights..."
-            ]
-            
+            steps = ["🔐 Secure Processing...", "🔍 Pattern Scan...", "🧠 Focus Model...", "📈 Risk Assessment...", "✨ Insight Generation..."]
             for i, step in enumerate(steps):
-                status_placeholder.markdown(f'<div style="text-align: center; color: var(--blue); font-weight: 600; margin-top: 1rem;">{step}</div>', unsafe_allow_html=True)
-                progress_placeholder.progress((i + 1) / len(steps))
-                time.sleep(0.4)
+                status_placeholder.write(f"**{step}**")
+                progress_bar.progress((i + 1) / len(steps))
+                time.sleep(0.3)
             
-            # ── Step 2: AI Engine Processing ──
             processor = AIProcessor(df)
-            
             focus_pipe = load_focus_model(FOCUS_MODEL_PATH)
             risk_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
             
-            # 2a. Predict focus & risk
-            pred_df = pd.DataFrame([{
-                "duration_min": dur, "subject": sub, "technique": tech,
-                "mood": mood, "caffeine_mg": caf,
-            }])
-            
+            pred_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf}])
             raw_focus = 75.0
-            if focus_pipe:
-                raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
+            if focus_pipe: raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
             
             now = datetime.now()
-            risk_df = pd.DataFrame([{
-                "duration_min": dur, "subject": sub, "technique": tech,
-                "mood": mood, "caffeine_mg": caf,
-                "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0
-            }])
+            risk_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf, 
+                                     "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0}])
             
             distraction_risk = 30.0
             if risk_pipe:
                 pred_count = float(risk_pipe.predict(risk_df)[0])
                 distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
 
-            # 2b. Calculate Advanced Score & Explanation
-            # Estimate distraction count from predicted risk for the scoring engine
             est_distractions = int((distraction_risk / 80) * 3) if distraction_risk > 0 else 0
             analysis_result = processor.calculate_score(raw_focus, current_distractions=est_distractions, current_duration=dur)
             patterns = processor.detect_patterns()
             explanation = processor.generate_explanation(analysis_result, patterns)
-            
-            # 2c. Final Insights & Recs
             recs = generate_recommendations(df, focus_score=raw_focus, distraction_risk=distraction_risk)
             
-            # ── Step 3: Save to Database ──
             insert_ai_analysis({
-                "user_id": current_user_id,
-                "input_summary": f"{sub} | {tech} | {dur} min",
-                "productivity_score": analysis_result["score"],
-                "distraction_risk": distraction_risk,
-                "insights": "\n".join(patterns),
-                "suggestions": "\n".join(recs),
-                "explanation": explanation
+                "user_id": current_user_id, "input_summary": f"{sub} | {tech} | {dur} min",
+                "productivity_score": analysis_result["score"], "distraction_risk": distraction_risk,
+                "insights": "\n".join(patterns), "suggestions": "\n".join(recs), "explanation": explanation
             })
             
-            progress_placeholder.empty()
-            status_placeholder.empty()
             st.success("Analysis Complete!")
             st.rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── Latest Result UI ────────────────────────────────────────
         history = get_ai_history(current_user_id)
         if not history.empty:
             latest = history.iloc[0]
             st.markdown("<br>", unsafe_allow_html=True)
             section_header("📊 Latest Insights Overview")
             
-            c1, c2 = st.columns(2)
-            with c1: _render_score_card(latest["productivity_score"], "Productivity Forecast", "🎯", "--blue")
-            with c2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "⚠️", "--purple" if latest["distraction_risk"] > 50 else "--teal")
+            sc1, sc2 = st.columns(2)
+            with sc1: _render_score_card(latest["productivity_score"], "Productivity Forecast", "🎯", "--blue")
+            with sc2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "⚠️", "--purple" if latest["distraction_risk"] > 50 else "--teal")
             
-            c3, c4 = st.columns(2)
-            with c3: _render_list_card("Behavioral Insights", latest["insights"].split("\n"), "🔍")
-            with c4: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
+            lc1, lc2 = st.columns(2)
+            with lc1: _render_list_card("Behavioral Insights", latest["insights"].split("\n"), "🔍")
+            with lc2: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.html(
-                f'<div class="premium-card">'
-                f'<div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">'
-                f'<div style="font-size: 1.4rem;">🧠</div>'
-                f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>'
-                f'</div>'
-                f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">'
-                f'{latest["explanation"].strip().replace("\n", " ")}'
-                f'</div>'
-                f'</div>'
-            )
+            exp_html = f"""
+            <div class="premium-card">
+                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
+                    <div style="font-size: 1.4rem;">🧠</div>
+                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>
+                </div>
+                <div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">
+                    {latest["explanation"].strip()}
+                </div>
+            </div>
+            """
+            st.markdown(_clean_html(exp_html), unsafe_allow_html=True)
         else:
-            st.info("No analysis data available. Click 'Start Analysis' above to get your first AI report.")
+            st.info("No analysis data available. Run your first analysis above!")
 
     with tab2:
         section_header("📜 Past Performance Records")
         history = get_ai_history(current_user_id)
-        
         if history.empty:
-            st.info("Your AI analysis history is empty.")
+            st.info("No history yet.")
         else:
             for _, row in history.iterrows():
                 with st.expander(f"📅 {row['timestamp']} — {row['input_summary']}"):
@@ -213,33 +184,29 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                         delete_ai_analysis(row["id"], current_user_id)
                         st.rerun()
                     
-                    st.markdown("**Insights**")
-                    for line in row["insights"].split("\n"):
-                        if line.strip(): st.markdown(f"- {line}")
-                    
-                    st.markdown("**Suggestions**")
-                    for line in row["suggestions"].split("\n"):
-                        if line.strip(): st.markdown(f"- {line}")
-                        
-                    with st.expander("🔍 System Explanation"):
-                        st.markdown(row["explanation"])
+                    with st.container():
+                        st.markdown("**Insights**")
+                        for line in row["insights"].split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                        st.markdown("**Suggestions**")
+                        for line in row["suggestions"].split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                        with st.expander("🔍 System Explanation"):
+                            st.markdown(row["explanation"])
 
     st.markdown("---")
-    # ── AI Study Coach ────────────────────────────────────────────
     section_header("🤖 AI Study Coach")
-    if not coach_is_configured():
-        st.info("Configure OPENAI_API_KEY to unlock interactive coaching.")
+    if coach_is_configured():
+        q = st.text_input("Ask about your study patterns", key="coach_q_v2")
+        if st.button("Query Coach", type="primary", key="coach_btn_v3"):
+            with st.spinner("Analyzing..."):
+                ans = ask_coach(q, df.sort_values(["date", "start_time"]).tail(20).to_csv())
+                st.markdown(f'<div class="premium-card" style="border-left: 4px solid var(--blue);">{ans}</div>', unsafe_allow_html=True)
     else:
-        q = st.text_input("Ask about your study patterns", placeholder="How can I improve my focus?", key="ai_coach_q")
-        if st.button("Query Coach", type="primary", key="ai_coach_btn"):
-            with st.spinner("Thinking..."):
-                answer = ask_coach(q, df.sort_values(["date", "start_time"]).tail(20).to_csv())
-                st.markdown(f'<div class="premium-card" style="border-left: 4px solid var(--blue);">{answer}</div>', unsafe_allow_html=True)
+        st.info("Coach requires API configuration.")
 
-    # ── Feedback ──────────────────────────────────────────────────
     with st.expander("💬 Share Feedback"):
-        f_text = st.text_area("How can we improve the AI Analyzer?", key="insights_fb_text")
-        if st.button("Submit Feedback", key="insights_fb_btn"):
-            if f_text:
-                insert_feedback(current_user_id, current_email, f_text)
-                st.success("Feedback recorded!")
+        f_text = st.text_area("How can we improve?", key="fb_text_v2")
+        if st.button("Submit", key="fb_btn_v2") and f_text:
+            insert_feedback(current_user_id, current_email, f_text)
+            st.success("Thanks!")
