@@ -411,6 +411,11 @@ c_text2 = "#475569" if is_light else "#a1a1aa"
 c_border = "rgba(0,0,0,0.06)" if is_light else "rgba(255,255,255,0.08)"
 c_pill = "rgba(14, 165, 233, 0.1)" if is_light else "rgba(56, 189, 248, 0.08)"
 
+# ── Sidebar Toggle Button ──────────────────────────────────────────
+col_btn, _ = st.columns([1, 4])
+if col_btn.button("☰ OPEN MENU", type="secondary", use_container_width=True):
+    st.sidebar_toggle()
+
 # ── Landing Hero Section ──────────────────────────────────────────
 st.markdown(f"""
 <div style="text-align:center; padding: 1.2rem 1rem 1rem; background: radial-gradient(circle at center, var(--surface) 0%, transparent 100%); margin-bottom: 1.5rem; border-radius: 20px; border: 1px solid var(--border);">
