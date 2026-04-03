@@ -9,16 +9,9 @@ from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 ROOT_DIR        = Path(__file__).resolve().parent
-DATA_DIR        = ROOT_DIR / "data"
-SQL_DIR         = ROOT_DIR / "sql"
-
-# 🔥 FIXED (important for Streamlit cloud)
 MODELS_DIR      = Path("models")
-
 SRC_DIR         = ROOT_DIR / "src"
 
-DB_PATH               = DATA_DIR / "study.db"
-SCHEMA_PATH           = SQL_DIR / "schema.sql"
 FOCUS_MODEL_PATH      = MODELS_DIR / "pipeline.joblib"
 DISTRACTION_MODEL_PATH = MODELS_DIR / "distraction_clf.joblib"
 

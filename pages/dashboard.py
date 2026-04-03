@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from datetime import date, timedelta
-from config import DB_PATH, PLOTLY_CFG, SUBJECTS, TECHNIQUES
+from config import PLOTLY_CFG, SUBJECTS, TECHNIQUES
 from src.analytics import compute_kpis, best_patterns, daily_trend
 from src.streaks import compute_streaks, compute_eligible_badges, BADGES
 from src.utils import get_weekly_goal, get_week_minutes, get_achievements, award_achievement
@@ -172,8 +172,8 @@ def _goal_rings(df: pd.DataFrame, user_id: int) -> None:
     """Goal progress rings."""
     section_header("🎯 Goal Progress Rings")
 
-    weekly_goal = get_weekly_goal(DB_PATH, user_id)
-    weekly_done = get_week_minutes(DB_PATH, user_id)
+    weekly_goal = get_weekly_goal(user_id)
+    weekly_done = get_week_minutes(user_id)
     weekly_pct  = min(100, int(weekly_done/weekly_goal*100)) if weekly_goal else 0
 
     # Daily goal (weekly/7)
@@ -316,14 +316,14 @@ def render(df: pd.DataFrame, user_id: int) -> None:
     streak_display(streak_info["current_streak"], streak_info["longest_streak"])
 
     eligible = compute_eligible_badges(df, streak_info)
-    already  = get_achievements(DB_PATH, user_id)
+    already  = get_achievements(user_id)
     for b in eligible:
         if b not in already:
             info = BADGES.get(b,{})
-            if award_achievement(DB_PATH, user_id, b):
+            if award_achievement(user_id, b):
                 st.toast(f"{info.get('icon','🏆')} Badge: {info.get('label','')}", icon="🏆")
 
-    earned = get_achievements(DB_PATH, user_id)
+    earned = get_achievements(user_id)
     render_badges(earned, BADGES)
     st.markdown("---")
 

@@ -3,8 +3,8 @@ app.py - ZenStudy AI Study Tracker
 Run: streamlit run app.py
 """
 from __future__ import annotations
-#from dotenv import load_dotenv
-#load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()  # Load .env so DATABASE_URL and other secrets are available
 
 import sys, secrets
 from pathlib import Path
@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-from config import DB_PATH, SCHEMA_PATH, OWNER_EMAIL, SUBJECTS, TECHNIQUES
+from config import OWNER_EMAIL, SUBJECTS, TECHNIQUES
 from src.utils import (
     ensure_schema, get_sessions, insert_session,
     get_weekly_goal, set_weekly_goal, get_week_minutes,
@@ -43,7 +43,7 @@ st.set_page_config(
 )
 
 inject_css()
-ensure_schema(DB_PATH, SCHEMA_PATH)
+ensure_schema()
 
 # ── Master CSS ─────────────────────────────────────────────────────
 st.markdown("""
@@ -134,12 +134,12 @@ def show_auth() -> bool:
         if st.button("Login", type="primary"):
             e = email.strip().lower()
             if not e:                          st.error("Enter your email")
-            elif not has_password(DB_PATH, e): st.error("Account not found — please sign up")
-            elif verify_password(DB_PATH,e,pwd):
+            elif not has_password(e): st.error("Account not found — please sign up")
+            elif verify_password(e,pwd):
                 st.session_state.update(auth_email=e,
-                    auth_user_id=get_user_id(DB_PATH,e),
+                    auth_user_id=get_user_id(e),
                     signup_success=False, reset_success=False)
-                mark_login(DB_PATH, e); st.rerun()
+                mark_login(e); st.rerun()
             else: st.error("Wrong password")
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -168,7 +168,7 @@ def show_auth() -> bool:
                 if st.button("Update Password", key="fp_upd"):
                     if not np1 or len(np1)<6: st.error("Min 6 characters")
                     else:
-                        set_password(DB_PATH, st.session_state["reset_email"], np1)
+                        set_password(st.session_state["reset_email"], np1)
                         for k in ["allow_reset","reset_otp","reset_email"]:
                             st.session_state.pop(k,None)
                         st.session_state.update(reset_success=True,auth_page="Login")
@@ -181,7 +181,7 @@ def show_auth() -> bool:
         if st.button("Send OTP", key="su_send"):
             e = email.strip().lower()
             if not is_valid_email(e):      st.error("Enter a valid email")
-            elif has_password(DB_PATH, e): st.warning("Account exists — please login")
+            elif has_password(e): st.warning("Account exists — please login")
             else:
                 code = f"{secrets.randbelow(1_000_000):06d}"
                 st.session_state.update(signup_otp=code, signup_otp_email=e)
@@ -194,7 +194,7 @@ def show_auth() -> bool:
             elif otp == st.session_state.get("signup_otp"):
                 st.session_state.update(verified_email=email.strip().lower(),
                                         set_password_mode=True)
-                upsert_user(DB_PATH, email); st.success("Email verified!")
+                upsert_user(email); st.success("Email verified!")
             else: st.error("Invalid OTP")
 
         if st.session_state.get("set_password_mode"):
@@ -210,7 +210,7 @@ def show_auth() -> bool:
                 elif len(np1)<6:     st.error("Min 6 characters")
                 elif np1!=np2:       st.error("Passwords don't match")
                 else:
-                    set_password(DB_PATH, st.session_state["verified_email"], np1)
+                    set_password(st.session_state["verified_email"], np1)
                     for k in ["set_password_mode","signup_otp","signup_otp_email","verified_email"]:
                         st.session_state.pop(k,None)
                     st.session_state.update(signup_success=True, auth_page="Login")
@@ -238,7 +238,7 @@ if not show_auth():
 current_email   = st.session_state.get("auth_email","")
 current_user_id = st.session_state.get("auth_user_id")
 if not current_user_id:
-    current_user_id = get_user_id(DB_PATH, current_email)
+    current_user_id = get_user_id(current_email)
     st.session_state["auth_user_id"] = current_user_id
 
 # ── ADMIN ──────────────────────────────────────────────────────
@@ -329,13 +329,13 @@ with st.sidebar:
 
     # Weekly goal
     st.markdown("**Weekly Goal**")
-    cg = get_weekly_goal(DB_PATH, current_user_id)
+    cg = get_weekly_goal(current_user_id)
     ng = st.number_input("Target min/week", min_value=30, max_value=3000,
                          step=30, value=cg, key="sb_goal")
     if ng != cg:
-        set_weekly_goal(DB_PATH, current_user_id, int(ng))
+        set_weekly_goal(current_user_id, int(ng))
         st.success("Updated!")
-    wd  = get_week_minutes(DB_PATH, current_user_id)
+    wd  = get_week_minutes(current_user_id)
     pct = min(100, int(wd/ng*100)) if ng else 0
     st.progress(pct/100, text=f"{wd}/{ng} min ({pct}%)")
 
@@ -362,7 +362,7 @@ with st.sidebar:
         if ev <= sv: st.error("End time must be AFTER start time")
         else:
             try:
-                insert_session(DB_PATH,{
+                insert_session({
                     "user_id":current_user_id,"user_email":current_email,
                     "date":dv.isoformat(),"start_time":sv.strftime("%H:%M"),
                     "end_time":ev.strftime("%H:%M"),"subject":sub,
@@ -410,7 +410,8 @@ st.markdown(f"""
 # ══════════════════════════════════════════════════════════════
 @st.cache_data(show_spinner=False)
 def _load(uid: int) -> pd.DataFrame:
-    return get_sessions(DB_PATH, uid) if DB_PATH.exists() else pd.DataFrame()
+    # DB_PATH is no longer used — Supabase is always available
+    return get_sessions(uid)
 
 df_raw = _load(current_user_id)
 

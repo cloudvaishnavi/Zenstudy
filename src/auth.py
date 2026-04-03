@@ -1,13 +1,7 @@
-"""
-src/auth.py — Authentication helpers for AI Study Tracker.
-Handles user creation, password hashing, login tracking.
-Refactored to use SQLAlchemy ORM.
-"""
 from __future__ import annotations
 
 import bcrypt
 import re
-from pathlib import Path
 from sqlalchemy.orm import Session
 from src.database import SessionLocal
 from src.db_models import User
@@ -27,7 +21,7 @@ def _hash(password: str) -> str:
 
 # ── User management ────────────────────────────────────────────────────────
 
-def upsert_user(db_path: Path, email: str) -> None:
+def upsert_user(email: str) -> None:
     """Insert user if not present."""
     db: Session = SessionLocal()
     try:
@@ -40,7 +34,7 @@ def upsert_user(db_path: Path, email: str) -> None:
         db.close()
 
 
-def get_user_id(db_path: Path, email: str) -> int | None:
+def get_user_id(email: str) -> int | None:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -49,7 +43,7 @@ def get_user_id(db_path: Path, email: str) -> int | None:
         db.close()
 
 
-def is_user_approved(db_path: Path, email: str) -> bool:
+def is_user_approved(email: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -58,7 +52,7 @@ def is_user_approved(db_path: Path, email: str) -> bool:
         db.close()
 
 
-def approve_user(db_path: Path, email: str) -> None:
+def approve_user(email: str) -> None:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -69,7 +63,7 @@ def approve_user(db_path: Path, email: str) -> None:
         db.close()
 
 
-def mark_login(db_path: Path, email: str) -> None:
+def mark_login(email: str) -> None:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -82,7 +76,7 @@ def mark_login(db_path: Path, email: str) -> None:
 
 # ── Password helpers ────────────────────────────────────────────────────────
 
-def has_password(db_path: Path, email: str) -> bool:
+def has_password(email: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -91,7 +85,7 @@ def has_password(db_path: Path, email: str) -> bool:
         db.close()
 
 
-def set_password(db_path: Path, email: str, password: str) -> None:
+def set_password(email: str, password: str) -> None:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()
@@ -102,7 +96,7 @@ def set_password(db_path: Path, email: str, password: str) -> None:
         db.close()
 
 
-def verify_password(db_path: Path, email: str, password: str) -> bool:
+def verify_password(email: str, password: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email.strip().lower()).first()

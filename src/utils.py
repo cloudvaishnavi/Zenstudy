@@ -1,11 +1,6 @@
-"""
-src/utils.py — Database helpers for AI Study Tracker.
-Refactored to use SQLAlchemy ORM.
-"""
 from __future__ import annotations
 
 from datetime import datetime, date, timedelta
-from pathlib import Path
 
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -17,27 +12,25 @@ from src.db_models import User, StudySession, WeeklyGoal, Achievement, Feedback
 
 # ── Schema & migrations ────────────────────────────────────────────────────
 
-def ensure_schema(db_path: Path, schema_path: Path) -> None:
-    """Create tables using SQLAlchemy. We ignore schema_path now but keep it for compatibility."""
+def ensure_schema() -> None:
+    """Create tables using SQLAlchemy."""
     init_db()
 
 
 # ── Generic helpers ────────────────────────────────────────────────────────
 
-def read_df(db_path: Path, query: str, params: tuple | None = None) -> pd.DataFrame:
+def read_df(query: str, params: tuple | None = None) -> pd.DataFrame:
     """Run a SELECT and return a DataFrame. Preserved for backwards compatibility with legacy complex queries."""
     with engine.connect() as con:
         return pd.read_sql_query(query, con, params=params or ())
 
 
-def execute(db_path: Path, sql: str, params: tuple | None = None) -> None:
-    """Run a single DML statement. Deprecated, please use ORM directly where possible."""
-    raise NotImplementedError("Raw execute is deprecated. Please use SQLAlchemy ORM.")
+# execute function removed (deprecated)
 
 
 # ── Session helpers ────────────────────────────────────────────────────────
 
-def insert_session(db_path: Path, row: dict) -> None:
+def insert_session(row: dict) -> None:
     """Validate and insert one study session."""
     fmt = "%H:%M"
     duration = int(
@@ -75,7 +68,7 @@ def insert_session(db_path: Path, row: dict) -> None:
         db.close()
 
 
-def get_sessions(db_path: Path, user_id: int) -> pd.DataFrame:
+def get_sessions(user_id: int) -> pd.DataFrame:
     """Load all sessions for a user as a DataFrame."""
     db: Session = SessionLocal()
     try:
@@ -109,7 +102,7 @@ def get_sessions(db_path: Path, user_id: int) -> pd.DataFrame:
         db.close()
 
 
-def delete_session(db_path: Path, session_id: int, user_id: int) -> None:
+def delete_session(session_id: int, user_id: int) -> None:
     """Delete a session (only if it belongs to the user)."""
     db: Session = SessionLocal()
     try:
@@ -123,7 +116,7 @@ def delete_session(db_path: Path, session_id: int, user_id: int) -> None:
 
 # ── Feedback helpers ───────────────────────────────────────────────────────
 
-def insert_feedback(db_path: Path, user_id: int, user_email: str, message: str) -> None:
+def insert_feedback(user_id: int, user_email: str, message: str) -> None:
     db: Session = SessionLocal()
     try:
         feedback = Feedback(user_id=user_id, user_email=user_email, message=message)
@@ -141,7 +134,7 @@ def _week_start(d: date | None = None) -> str:
     return (d - timedelta(days=d.weekday())).isoformat()
 
 
-def get_weekly_goal(db_path: Path, user_id: int) -> int:
+def get_weekly_goal(user_id: int) -> int:
     """Return this week's goal in minutes (default 300)."""
     db: Session = SessionLocal()
     try:
@@ -151,7 +144,7 @@ def get_weekly_goal(db_path: Path, user_id: int) -> int:
         db.close()
 
 
-def set_weekly_goal(db_path: Path, user_id: int, goal_minutes: int) -> None:
+def set_weekly_goal(user_id: int, goal_minutes: int) -> None:
     """Upsert this week's goal."""
     db: Session = SessionLocal()
     try:
@@ -166,7 +159,7 @@ def set_weekly_goal(db_path: Path, user_id: int, goal_minutes: int) -> None:
         db.close()
 
 
-def get_week_minutes(db_path: Path, user_id: int) -> int:
+def get_week_minutes(user_id: int) -> int:
     """Total study minutes logged this calendar week."""
     ws = _week_start()
     we = (date.fromisoformat(ws) + timedelta(days=6)).isoformat()
@@ -182,7 +175,7 @@ def get_week_minutes(db_path: Path, user_id: int) -> int:
 
 # ── Achievement helpers ────────────────────────────────────────────────────
 
-def award_achievement(db_path: Path, user_id: int, badge: str) -> bool:
+def award_achievement(user_id: int, badge: str) -> bool:
     """Grant badge if not already earned. Returns True if newly awarded."""
     db: Session = SessionLocal()
     try:
@@ -197,7 +190,7 @@ def award_achievement(db_path: Path, user_id: int, badge: str) -> bool:
         db.close()
 
 
-def get_achievements(db_path: Path, user_id: int) -> list[str]:
+def get_achievements(user_id: int) -> list[str]:
     """Return list of badge strings the user has earned."""
     db: Session = SessionLocal()
     try:

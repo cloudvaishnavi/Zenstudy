@@ -6,7 +6,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from config import DB_PATH, SUBJECTS, TECHNIQUES, FOCUS_HIGH, FOCUS_MEDIUM
+from config import SUBJECTS, TECHNIQUES, FOCUS_HIGH, FOCUS_MEDIUM
 from src.analytics import generate_recommendations
 from src.model import load_focus_model, load_distraction_model
 from src.llm_coach import is_configured as coach_is_configured, ask_coach
@@ -62,18 +62,137 @@ def _risk_gauge(pct: int) -> str:
     </div>"""
 
 
+def _sessions_needed_card(have: int, need: int = 3) -> None:
+    """Show a nice progress card when there aren't enough sessions yet."""
+    pct = int((have / need) * 100)
+    remaining = need - have
+    st.markdown(f"""
+    <div style="background:#1e2230;border:1px solid #2a2f3d;border-radius:14px;padding:1.4rem 1.6rem">
+        <div style="font-size:0.85rem;color:#7b8099;margin-bottom:0.8rem">
+            🧠 The AI model trains automatically once you have <strong style="color:#fafafa">3 sessions</strong>.
+            Add <strong style="color:#38bdf8">{remaining} more session{'s' if remaining != 1 else ''}</strong> to unlock predictions!
+        </div>
+        <div style="display:flex;align-items:center;gap:0.8rem">
+            <div style="flex:1;background:#2a2f3d;border-radius:99px;height:10px;overflow:hidden">
+                <div style="width:{pct}%;height:100%;background:linear-gradient(90deg,#38bdf888,#38bdf8);border-radius:99px;transition:width 0.6s ease"></div>
+            </div>
+            <div style="font-size:0.8rem;color:#a1a1aa;white-space:nowrap">{have}/{need} sessions</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def _auto_train_focus(df: pd.DataFrame) -> object | None:
+    """Train focus model from df in-memory and save it. Returns pipeline or None."""
+    try:
+        import joblib
+        from pathlib import Path
+        from sklearn.model_selection import train_test_split
+        from sklearn.preprocessing import OneHotEncoder
+        from sklearn.compose import ColumnTransformer
+        from sklearn.pipeline import Pipeline
+        from sklearn.ensemble import RandomForestRegressor
+
+        df2 = df.copy()
+        if "focus_score" not in df2.columns or df2["focus_score"].isna().all():
+            df2["focus_score"] = (df2["productivity"].astype(float) / 5.0) * 100.0
+
+        df2 = df2.dropna(subset=["duration_min", "subject", "technique",
+                                  "distractions", "mood", "caffeine_mg", "focus_score"])
+        if len(df2) < 3:
+            return None
+
+        y = df2["focus_score"].values
+        X = df2[["duration_min", "subject", "technique", "distractions", "mood", "caffeine_mg"]].copy()
+
+        pre = ColumnTransformer([
+            ("cat", OneHotEncoder(handle_unknown="ignore"), ["subject", "technique"]),
+            ("num", "passthrough", ["duration_min", "distractions", "mood", "caffeine_mg"]),
+        ])
+        pipe = Pipeline([("pre", pre), ("rf", RandomForestRegressor(n_estimators=100, random_state=42))])
+
+        test_size = 0.2 if len(df2) >= 13 else 0
+        if test_size:
+            Xtr, _, ytr, _ = train_test_split(X, y, test_size=test_size, random_state=42)
+            pipe.fit(Xtr, ytr)
+        else:
+            pipe.fit(X, y)
+
+        out = Path(FOCUS_MODEL_PATH)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(pipe, out)
+        return pipe
+    except Exception:
+        return None
+
+
+def _auto_train_distraction(df: pd.DataFrame) -> object | None:
+    """Train distraction regressor from df in-memory and save it. Returns pipeline or None."""
+    try:
+        import joblib
+        from pathlib import Path
+        from sklearn.model_selection import train_test_split
+        from sklearn.preprocessing import OneHotEncoder
+        from sklearn.compose import ColumnTransformer
+        from sklearn.pipeline import Pipeline
+        from sklearn.ensemble import RandomForestRegressor
+
+        df2 = df.copy().dropna(subset=["duration_min", "subject", "technique",
+                                        "mood", "caffeine_mg", "distractions", "start_hour", "day_of_week"])
+        if len(df2) < 3:
+            return None
+
+        y = df2["distractions"].astype(float).values
+        # Features: duration, subject, technique, mood, caffeine, start_hour, day_of_week, is_weekend
+        X = df2[["duration_min", "subject", "technique", "mood", "caffeine_mg", "start_hour", "day_of_week", "is_weekend"]].copy()
+
+        pre = ColumnTransformer([
+            ("cat", OneHotEncoder(handle_unknown="ignore"), ["subject", "technique"]),
+            ("num", "passthrough", ["duration_min", "mood", "caffeine_mg", "start_hour", "day_of_week", "is_weekend"]),
+        ])
+        pipe = Pipeline([
+            ("pre", pre),
+            ("rf", RandomForestRegressor(n_estimators=100, random_state=42, max_depth=5)),
+        ])
+
+        test_size = 0.2 if len(df2) >= 13 else 0
+        if test_size:
+            Xtr, _, ytr, _ = train_test_split(X, y, test_size=test_size, random_state=42)
+            pipe.fit(Xtr, ytr)
+        else:
+            pipe.fit(X, y)
+
+        out = Path(DISTRACTION_MODEL_PATH)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(pipe, out)
+        return pipe
+    except Exception:
+        return None
+
+
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
 
     focus_result: float | None = None
     risk_result:  int   | None = None
+
+    session_count = len(df)
 
     # ── Focus Estimator ───────────────────────────────────────────
     section_header("🔮 Productivity Estimator")
     pipe = load_focus_model(FOCUS_MODEL_PATH)
 
     if pipe is None:
-        st.warning("Model not trained yet. Run: `python src/train_model.py` after adding sessions.", icon="⚠️")
-    else:
+        if session_count >= 3:
+            with st.spinner("🤖 Training focus model on your data..."):
+                pipe = _auto_train_focus(df)
+            if pipe:
+                st.success("✅ Focus model trained automatically!")
+            else:
+                st.error("Training failed. Please try refreshing the page.")
+        else:
+            _sessions_needed_card(session_count)
+
+    if pipe is not None:
         c1, c2, c3, c4, c5, c6 = st.columns(6)
         with c1: sub  = st.selectbox("Subject",       SUBJECTS,   key="pred_sub")
         with c2: tech = st.selectbox("Technique",     TECHNIQUES, key="pred_tech")
@@ -97,8 +216,17 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     dis_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
 
     if dis_pipe is None:
-        st.warning("Distraction model not trained yet. Run: `python src/train_distraction_model.py`.", icon="⚠️")
-    else:
+        if session_count >= 3:
+            with st.spinner("🤖 Training distraction model on your data..."):
+                dis_pipe = _auto_train_distraction(df)
+            if dis_pipe:
+                st.success("✅ Distraction model trained automatically!")
+            else:
+                st.error("Training failed. Please try refreshing the page.")
+        else:
+            _sessions_needed_card(session_count)
+
+    if dis_pipe is not None:
         c1, c2, c3, c4, c5 = st.columns(5)
         with c1: d_sub  = st.selectbox("Subject",      SUBJECTS,   key="dis_sub")
         with c2: d_tech = st.selectbox("Technique",    TECHNIQUES, key="dis_tech")
@@ -106,12 +234,31 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         with c4: d_mood = st.slider("Mood", 1, 5, 4, key="dis_mood")
         with c5: d_caf  = st.number_input("Caffeine (mg)",  min_value=0,  step=10, value=100, key="dis_caf")
 
+        # Temporal context for prediction
+        from datetime import datetime
+        now = datetime.now()
+        cur_hour = float(now.hour)
+        cur_dow  = float(now.weekday())
+        cur_is_wk = 1.0 if cur_dow >= 5 else 0.0
+
         d_in = pd.DataFrame([{
             "duration_min": d_dur, "subject": d_sub, "technique": d_tech,
             "mood": d_mood, "caffeine_mg": d_caf,
+            "start_hour": cur_hour, "day_of_week": cur_dow, "is_weekend": cur_is_wk
         }])
-        risk  = float(dis_pipe.predict_proba(d_in)[0][1])
-        risk_result = int(round(risk * 100))
+
+        try:
+            # Predict expected number of distractions
+            pred_count = float(dis_pipe.predict(d_in)[0])
+            # Scale to Risk Score: 0-1 distractions = Low, 2 = Med, 3+ = High
+            # Mapping: 1 distraction -> 20%, 2 -> 50%, 3+ -> 80%+
+            risk_val = min(100, int(round((pred_count / 3.0) * 80))) if pred_count > 0 else 0
+            # Ensure it feels dynamic: even small predictions show some risk
+            if pred_count > 0 and risk_val < 5: risk_val = 5
+        except Exception:
+            risk_val = 0
+
+        risk_result = risk_val
         st.markdown(_risk_gauge(risk_result), unsafe_allow_html=True)
 
     st.markdown("---")
@@ -172,7 +319,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         fb_submitted = st.form_submit_button("Send Feedback 📨", type="primary")
     if fb_submitted:
         if fb_text.strip():
-            insert_feedback(DB_PATH, current_user_id, current_email, fb_text.strip())
+            insert_feedback(current_user_id, current_email, fb_text.strip())
             st.success("Thanks! Feedback received 🙏")
         else:
             st.warning("Please write something before submitting.")

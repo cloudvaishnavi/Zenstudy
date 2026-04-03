@@ -36,6 +36,10 @@ def enrich(df: pd.DataFrame) -> pd.DataFrame:
 
     out["start_hour"] = out["start_time"].apply(_hour)
 
+    # Day of week (0-6, Mon-Sun)
+    out["day_of_week"] = out["date"].dt.dayofweek
+    out["is_weekend"] = (out["day_of_week"] >= 5).astype(int)
+
     # Time-of-day bucket label
     def _bucket(h: float) -> str:
         h = int(h)

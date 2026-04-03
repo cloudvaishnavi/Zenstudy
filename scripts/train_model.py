@@ -5,7 +5,7 @@ from pathlib import Path
 # Make project root importable
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import argparse, sqlite3, joblib
+import argparse, joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
@@ -13,24 +13,16 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error
-from config import DB_PATH, FOCUS_MODEL_PATH
-
-
-def load_df(db: Path) -> pd.DataFrame:
-    con = sqlite3.connect(db)
-    try:
-        return pd.read_sql_query('SELECT * FROM study_sessions', con)
-    finally:
-        con.close()
+from config import FOCUS_MODEL_PATH
+from src.utils import read_df
 
 
 def main():
     ap = argparse.ArgumentParser(description='Train focus score prediction model')
-    ap.add_argument('--db',  default=str(DB_PATH))
     ap.add_argument('--out', default=str(FOCUS_MODEL_PATH))
     args = ap.parse_args()
 
-    df = load_df(Path(args.db))
+    df = read_df('SELECT * FROM study_sessions')
     if df.empty:
         raise SystemExit('No sessions found. Run: python scripts/ingest.py first.')
 

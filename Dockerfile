@@ -5,11 +5,12 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
-# gcc is typically required for compiling some Python packages (e.g., bcrypt)
+# libpq-dev is required for psycopg2 (PostgreSQL/Supabase driver)
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     software-properties-common \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container

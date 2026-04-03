@@ -9,7 +9,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from config import DB_PATH, SUBJECTS, TECHNIQUES
+from config import SUBJECTS, TECHNIQUES
 from src.utils import insert_session, delete_session
 from components.style import section_header
 
@@ -20,7 +20,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     section_header("📋 Session History")
 
     display_cols = [
-        "date", "start_time", "end_time", "duration_min",
+        "session_id", "date", "start_time", "end_time", "duration_min",
         "subject", "technique", "mood", "distractions",
         "caffeine_mg", "productivity", "focus_score", "notes",
     ]
@@ -30,6 +30,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         hide_index=True,
         use_container_width=True,
         column_config={
+            "session_id": st.column_config.NumberColumn("#ID", format="%d"),
             "focus_score": st.column_config.ProgressColumn(
                 "Focus Score", min_value=0, max_value=100, format="%.0f"
             ),
@@ -45,7 +46,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     if "session_id" in df.columns:
         del_id = st.number_input("Enter Session ID to delete", min_value=1, step=1, value=1)
         if st.button("Delete Session", type="secondary"):
-            delete_session(DB_PATH, int(del_id), current_user_id)
+            delete_session(int(del_id), current_user_id)
             st.success(f"Session {del_id} deleted ✅")
             st.cache_data.clear()
             st.rerun()
@@ -164,7 +165,6 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         if done:
             try:
                 insert_session(
-                    DB_PATH,
                     {
                         "user_id":      current_user_id,
                         "user_email":   current_email,
