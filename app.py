@@ -415,22 +415,38 @@ c_text2 = "#475569" if is_light else "#a1a1aa"
 c_border = "rgba(0,0,0,0.06)" if is_light else "rgba(255,255,255,0.08)"
 c_pill = "rgba(14, 165, 233, 0.1)" if is_light else "rgba(56, 189, 248, 0.08)"
 
+# ── Landing Hero Section ──────────────────────────────────────────
 st.markdown(f"""
-<div style="display:flex;flex-direction:column;gap:0.4rem;padding-bottom:1.5rem;margin-bottom:1.5rem;border-bottom:1px solid {c_border}">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem;">
-      <div style="display:flex;align-items:center;gap:0.8rem">
+<div style="text-align:center; padding: 4rem 1rem 3.5rem; background: radial-gradient(circle at center, var(--surface) 0%, transparent 100%); margin-bottom: 2rem; border-radius: 24px; border: 1px solid var(--border);">
+    <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧠</div>
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 3.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; margin-bottom: 0.5rem; line-height: 1.1;">
+        AI Behavior Pattern <span style="background: linear-gradient(90deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Analyzer</span>
+    </h1>
+    <p style="font-size: 1.25rem; color: var(--text-dim); max-width: 700px; margin: 0 auto 2.2rem; line-height: 1.6; font-weight: 400;">
+        Analyze your focus, detect distractions, and get personalized productivity insights powered by advanced AI models.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Top Bar (Navigation / Status) ──────────────────────────────────
+is_light = st.session_state.get("light_mode", False)
+c_text1 = "var(--text)"
+c_text2 = "var(--text-dim)"
+c_border = "var(--border)"
+c_pill = "var(--surface)"
+
+st.markdown(f"""
+<div style="display:flex; flex-direction:column; gap:0.4rem; padding-bottom:1.5rem; margin-bottom:1.5rem; border-bottom:1px solid {c_border}">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.8rem;">
+      <div style="display:flex; align-items:center; gap:0.8rem">
           {LOGO.format(w=36,h=36)}
-          <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                font-size:1.6rem;color:{c_text1};letter-spacing:-0.03em;">ZenStudy</span>
+          <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
+                font-size:1.6rem; color:{c_text1}; letter-spacing:-0.03em;">ZenStudy <span style="font-size: 0.8rem; vertical-align: top; color: var(--blue); border: 1px solid var(--blue); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.4rem; font-weight: 600;">PRO</span></span>
       </div>
       <div style="text-align:right">
-          <div style="font-size:1rem;color:{c_text1};font-weight:600;font-family:'Space Grotesk',sans-serif;">{greeting}</div>
-          <div style="font-size:0.8rem;color:{c_text2}">{current_email.split('@')[0]}</div>
+          <div style="font-size:1rem; color:{c_text1}; font-weight:600; font-family:'Space Grotesk',sans-serif;">{greeting}</div>
+          <div style="font-size:0.8rem; color:{c_text2}">{current_email.split('@')[0]}</div>
       </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.3rem;flex-wrap:wrap;gap:0.5rem;">
-      <div style="font-size:0.85rem;color:{c_text2};font-weight:500;">Your AI-Powered Study Analytics & Habit Tracker</div>
-      <div class="pulse-pill" style="font-size:0.75rem;color:#38bdf8;padding:0.2rem 0.8rem;background:{c_pill};border-radius:99px;font-weight:700;letter-spacing:0.05em;">Session Active</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -485,49 +501,33 @@ if active_days:
             else:
                 break
 
+# ── Quick Stats Bar (SaaS Style) ────────────────────────────────────
 st.markdown(f"""
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;
-     margin-bottom:1.5rem">
-  <div style="background:rgba(17,17,21,0.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);border-top:3px solid #38bdf8;
-       border-radius:16px;padding:1.2rem 1rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
-      <div style="font-size:1.4rem;margin-bottom:0.4rem;text-shadow:0 0 10px rgba(56,189,248,0.5)">⏱️</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-           font-weight:700;color:#fafafa">{total_min//60}h {total_min%60}m</div>
-      <div style="font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;
-           letter-spacing:0.08em;font-weight:600;margin-top:0.3rem">Total Study Time</div>
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1.2rem; margin-bottom:2.5rem">
+  <div class="premium-card">
+      <div style="font-size:1.4rem; margin-bottom:0.4rem;">⏱️</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:var(--text); line-height:1.1;">{total_min//60}h {total_min%60}m</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:0.6rem">Focus Time</div>
   </div>
-  <div style="background:rgba(17,17,21,0.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);border-top:3px solid #2dd4bf;
-       border-radius:16px;padding:1.2rem 1rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
-      <div style="font-size:1.4rem;margin-bottom:0.4rem;text-shadow:0 0 10px rgba(45,212,191,0.5)">📅</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-           font-weight:700;color:#fafafa">{sessions_n}</div>
-      <div style="font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;
-           letter-spacing:0.08em;font-weight:600;margin-top:0.3rem">Total Sessions</div>
+  <div class="premium-card">
+      <div style="font-size:1.4rem; margin-bottom:0.4rem;">📅</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:var(--text); line-height:1.1;">{sessions_n}</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:0.6rem">Total Sessions</div>
   </div>
-  <div style="background:rgba(17,17,21,0.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);border-top:3px solid #f59e0b;
-       border-radius:16px;padding:1.2rem 1rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
-      <div style="font-size:1.4rem;margin-bottom:0.4rem;text-shadow:0 0 10px rgba(245,158,11,0.5)">🎯</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-           font-weight:700;color:#fafafa">{avg_focus:.0f}</div>
-      <div style="font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;
-           letter-spacing:0.08em;font-weight:600;margin-top:0.3rem">Avg Focus Score</div>
+  <div class="premium-card">
+      <div style="font-size:1.4rem; margin-bottom:0.4rem;">🎯</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:var(--text); line-height:1.1;">{avg_focus:.0f}</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:0.6rem">Focus Score</div>
   </div>
-  <div style="background:rgba(17,17,21,0.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);border-top:3px solid #a78bfa;
-       border-radius:16px;padding:1.2rem 1rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
-      <div style="font-size:1.4rem;margin-bottom:0.4rem;text-shadow:0 0 10px rgba(167,139,250,0.5)">😊</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-           font-weight:700;color:#fafafa">{avg_mood:.1f}</div>
-      <div style="font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;
-           letter-spacing:0.08em;font-weight:600;margin-top:0.3rem">Avg Mood</div>
+  <div class="premium-card">
+      <div style="font-size:1.4rem; margin-bottom:0.4rem;">😊</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:var(--text); line-height:1.1;">{avg_mood:.1f}</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:0.6rem">Avg Mood</div>
   </div>
-  <div style="background:rgba(17,17,21,0.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);
-       border-top:3px solid {'#f97316' if streak>0 else 'rgba(255,255,255,0.1)'};
-       border-radius:16px;padding:1.2rem 1rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.15)">
-      <div style="font-size:1.4rem;margin-bottom:0.4rem;text-shadow:{'0 0 10px rgba(249,115,22,0.5)' if streak>0 else 'none'}">{'🔥' if streak>0 else '💤'}</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-           font-weight:700;color:{'#f97316' if streak>0 else '#a1a1aa'}">{streak}</div>
-      <div style="font-size:0.75rem;color:#a1a1aa;text-transform:uppercase;
-           letter-spacing:0.08em;font-weight:600;margin-top:0.3rem">Day Streak</div>
+  <div class="premium-card">
+      <div style="font-size:1.4rem; margin-bottom:0.4rem;">{'🔥' if streak>0 else '💤'}</div>
+      <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:{'var(--blue)' if streak>0 else 'var(--text-dim)'}; line-height:1.1;">{streak}</div>
+      <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin-top:0.6rem">Day Streak</div>
   </div>
 </div>
 """, unsafe_allow_html=True)

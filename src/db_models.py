@@ -24,6 +24,7 @@ class User(Base):
     goals: Mapped[List["WeeklyGoal"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     achievements: Mapped[List["Achievement"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     feedbacks: Mapped[List["Feedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    analyses: Mapped[List["AIAnalysis"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class StudySession(Base):
@@ -109,3 +110,22 @@ class Metadata(Base):
 
     key: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[Optional[str]]
+
+
+class AIAnalysis(Base):
+    __tablename__ = "ai_analyses"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    timestamp: Mapped[str] = mapped_column(default=lambda: datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nullable=False)
+    input_summary: Mapped[str] = mapped_column(nullable=False)
+    productivity_score: Mapped[float] = mapped_column(nullable=False)
+    distraction_risk: Mapped[float] = mapped_column(nullable=False)
+    insights: Mapped[str] = mapped_column(nullable=False)
+    suggestions: Mapped[str] = mapped_column(nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="analyses")
+
+    __table_args__ = (
+        Index("idx_analyses_user_id", "user_id"),
+    )

@@ -38,50 +38,44 @@ def inject_css() -> None:
 
     :root {
         --bg:        #060609;
-        --surface:   rgba(17, 17, 21, 0.7);
-        --surface2:  rgba(25, 25, 30, 0.75);
-        --surface3:  rgba(30, 30, 35, 0.85);
+        --surface:   rgba(15, 23, 42, 0.7);
+        --surface-deep: rgba(10, 15, 30, 0.9);
+        --card-bg:   #1e293b;
         --border:    rgba(255, 255, 255, 0.08);
-        --border2:   rgba(255, 255, 255, 0.12);
+        --border-glow: rgba(56, 189, 248, 0.3);
         --blue:      #38bdf8;
         --blue-dark: #0284c7;
         --teal:      #2dd4bf;
-        --teal-dark: #0d9488;
         --purple:    #a78bfa;
-        --text:      #fafafa;
-        --text2:     #a1a1aa;
-        --text3:     #71717a;
+        --text:      #f1f5f9;
+        --text-dim:  #94a3b8;
         --radius:    16px;
-        --radius-sm: 10px;
-        --radius-lg: 24px;
-        --shadow:    0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        --shadow:    0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
     }
 
     [data-theme="light"] {
         --bg:        #f8fafc;
-        --surface:   rgba(255, 255, 255, 0.8);
-        --surface2:  rgba(241, 245, 249, 0.9);
-        --surface3:  rgba(226, 232, 240, 0.95);
-        --border:    rgba(0, 0, 0, 0.06);
-        --border2:   rgba(0, 0, 0, 0.1);
+        --surface:   rgba(255, 255, 255, 0.9);
+        --surface-deep: #ffffff;
+        --card-bg:   #ffffff;
+        --border:    #e2e8f0;
+        --border-glow: rgba(14, 165, 233, 0.2);
         --blue:      #0ea5e9;
-        --blue-dark: #0284c7;
-        --teal:      #0d9488;
-        --teal-dark: #0f766e;
-        --purple:    #7c3aed;
+        --blue-dark: #0369a1;
+        --teal:      #10b981;
+        --purple:    #8b5cf6;
         --text:      #0f172a;
-        --text2:     #475569;
-        --text3:     #64748b;
-        --shadow:    0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        --text-dim:  #64748b;
+        --shadow:    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
 
     html, body, [data-testid="stAppViewContainer"] {
         background-color: var(--bg) !important;
-        background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 25%),
-                          radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.08), transparent 25%) !important;
+        background-image: radial-gradient(circle at 10% 20%, var(--border-glow), transparent 25%),
+                          radial-gradient(circle at 90% 80%, var(--border-glow), transparent 25%) !important;
         color: var(--text) !important;
         font-family: 'Inter', sans-serif !important;
-        transition: background-color 0.4s ease !important;
+        transition: all 0.4s ease !important;
     }
 
     header[data-testid="stHeader"], 
@@ -288,20 +282,25 @@ def inject_css() -> None:
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-    /* ── Alerts ── */
-    [data-testid="stAlert"] {
-        border-radius: var(--radius-sm) !important;
-        border: 1px solid var(--border) !important;
-        background: var(--surface2) !important;
-        backdrop-filter: blur(10px);
-    }
-
-    /* ── Expander ── */
-    [data-testid="stExpander"] {
-        background: var(--surface) !important;
-        backdrop-filter: blur(15px) !important;
+    /* ── SaaS Premium Card ── */
+    .premium-card {
+        background: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
+        padding: 1.5rem !important;
+        box-shadow: var(--shadow) !important;
+        transition: transform 0.3s ease, border-color 0.3s ease !important;
+    }
+    .premium-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--blue-dark) !important;
+    }
+
+    [data-testid="stMetric"] {
+        background: var(--surface) !important;
+        padding: 1rem !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border) !important;
     }
     /* ── Pulse Animation ── */
     @keyframes neon-pulse {

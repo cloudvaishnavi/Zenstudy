@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from src.database import SessionLocal, init_db, engine
-from src.db_models import User, StudySession, WeeklyGoal, Achievement, Feedback
+from src.db_models import User, StudySession, WeeklyGoal, Achievement, Feedback, AIAnalysis
 
 
 # ── Schema & migrations ────────────────────────────────────────────────────
@@ -196,5 +196,61 @@ def get_achievements(user_id: int) -> list[str]:
     try:
         achievements = db.query(Achievement).filter_by(user_id=user_id).order_by(Achievement.earned_at).all()
         return [a.badge for a in achievements]
+    finally:
+        db.close()
+
+
+# ── AI Analysis helpers ────────────────────────────────────────────────────
+
+def insert_ai_analysis(row: dict) -> None:
+    """Insert a new AI analysis record."""
+    db: Session = SessionLocal()
+    try:
+        analysis = AIAnalysis(
+            user_id=row["user_id"],
+            input_summary=row["input_summary"],
+            productivity_score=row["productivity_score"],
+            distraction_risk=row["distraction_risk"],
+            insights=row["insights"],
+            suggestions=row["suggestions"]
+        )
+        db.add(analysis)
+        db.commit()
+    finally:
+        db.close()
+
+
+def get_ai_history(user_id: int) -> pd.DataFrame:
+    """Load all AI analyses for a user as a DataFrame."""
+    db: Session = SessionLocal()
+    try:
+        analyses = db.query(AIAnalysis).filter_by(user_id=user_id).order_by(AIAnalysis.timestamp.desc()).all()
+        if not analyses:
+            return pd.DataFrame()
+        
+        data = []
+        for a in analyses:
+            data.append({
+                "id": a.id,
+                "timestamp": a.timestamp,
+                "input_summary": a.input_summary,
+                "productivity_score": a.productivity_score,
+                "distraction_risk": a.distraction_risk,
+                "insights": a.insights,
+                "suggestions": a.suggestions
+            })
+        return pd.DataFrame(data)
+    finally:
+        db.close()
+
+
+def delete_ai_analysis(analysis_id: int, user_id: int) -> None:
+    """Delete an AI analysis record."""
+    db: Session = SessionLocal()
+    try:
+        analysis = db.query(AIAnalysis).filter_by(id=analysis_id, user_id=user_id).first()
+        if analysis:
+            db.delete(analysis)
+            db.commit()
     finally:
         db.close()
