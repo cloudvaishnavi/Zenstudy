@@ -68,9 +68,52 @@ def inject_css() -> None:
     /* Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
         background: var(--surface) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
+        backdrop-filter: blur(25px) !important;
+        -webkit-backdrop-filter: blur(25px) !important;
         border-right: 1px solid var(--border) !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* ── Sidebar Toggle Button (Mobile & Desktop) ── */
+    [data-testid="collapsedControl"], 
+    [data-testid="stSidebarCollapseButton"] {
+        background: var(--surface2) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid var(--border2) !important;
+        border-radius: 50% !important;
+        width: 42px !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        transition: all 0.3s ease !important;
+        z-index: 1000001 !important;
+    }
+
+    [data-testid="collapsedControl"]:hover,
+    [data-testid="stSidebarCollapseButton"]:hover {
+        transform: scale(1.1) !important;
+        border-color: var(--blue) !important;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4) !important;
+        background: var(--surface3) !important;
+    }
+
+    /* Positioning the 'Open' button specifically on mobile */
+    @media (max-width: 768px) {
+        [data-testid="collapsedControl"] {
+            top: 20px !important;
+            left: 20px !important;
+            position: fixed !important;
+            border-top: 2px solid var(--blue) !important;
+        }
+        
+        /* Make the inner icon bigger & themed */
+        [data-testid="collapsedControl"] svg {
+            fill: var(--blue) !important;
+            width: 24px !important;
+            height: 24px !important;
+        }
     }
 
     .block-container {

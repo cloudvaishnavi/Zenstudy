@@ -60,11 +60,24 @@ nav[data-testid="stSidebarNav"] { display:none !important; }
 /* Radio label hidden on auth */
 [data-testid="stRadio"] > label { display:none !important; }
 
-/* Mobile */
+/* Mobile Fixes */
 @media(max-width:768px){
-    .block-container { padding:4rem 0.5rem 1rem !important; }
-    [data-testid="stSidebar"] { min-width:100vw !important; width:100vw !important; }
-    [data-testid="column"] { min-width:100% !important; }
+    .block-container { 
+        padding: 5.5rem 0.6rem 1.5rem !important; 
+    }
+    [data-testid="stSidebar"] { 
+        min-width: 85vw !important; 
+        max-width: 85vw !important; 
+        width: 85vw !important; 
+        transition: all 0.4s ease-in-out !important;
+    }
+    [data-testid="column"] { min-width:100% !important; margin-bottom: 0.8rem !important; }
+    
+    /* Make the toggle button more obvious when closed */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+    }
 }
 .block-container { padding:4.5rem 1.8rem 3rem !important; max-width:1400px !important; }
 </style>
