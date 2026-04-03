@@ -96,62 +96,65 @@ def inject_css() -> None:
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* ── Sidebar Toggle Button (MENU PILL) ── */
+    /* ── Sidebar Toggle Button (MENU PILL) - MOVED TO TOP RIGHT ── */
     [data-testid="collapsedControl"] {
         background: linear-gradient(135deg, var(--blue), var(--purple)) !important;
-        border-radius: 50px !important;
-        width: 100px !important;
-        height: 42px !important;
-        padding: 0 1rem !important;
+        border-radius: 99px !important;
+        padding: 0 1.5rem !important;
+        height: 48px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 0.6rem !important;
-        box-shadow: 0 8px 32px rgba(56, 189, 248, 0.4) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
+        box-shadow: 0 10px 40px rgba(56, 189, 248, 0.5) !important;
+        border: 2px solid rgba(255,255,255,0.3) !important;
         position: fixed !important;
         top: 1.2rem !important;
-        left: 1.2rem !important;
-        z-index: 9999999 !important;
+        right: 1.2rem !important; /* Moved to Right */
+        left: auto !important;
+        z-index: 10000000 !important;
         cursor: pointer !important;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        animation: pill-pulse 3s infinite ease-in-out !important;
+        animation: menu-pulse 2s infinite ease-in-out !important;
     }
     
     [data-testid="collapsedControl"]::after {
-        content: "MENU" !important;
+        content: "OPEN SIDEBAR" !important;
         color: white !important;
         font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 0.8rem !important;
-        letter-spacing: 0.08em !important;
-        margin-left: 0.2rem !important;
+        font-weight: 800 !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.05em !important;
+        display: inline-block !important;
     }
 
     [data-testid="collapsedControl"]:hover {
-        transform: scale(1.08) translateY(-2px) !important;
-        box-shadow: 0 12px 40px rgba(56, 189, 248, 0.6) !important;
+        transform: scale(1.1) rotate(2deg) !important;
+        box-shadow: 0 15px 50px rgba(56, 189, 248, 0.7) !important;
     }
 
-    @keyframes pill-pulse {
-        0% { transform: scale(1); box-shadow: 0 8px 32px rgba(56, 189, 248, 0.4); }
-        50% { transform: scale(1.03); box-shadow: 0 8px 45px rgba(56, 189, 248, 0.7); }
-        100% { transform: scale(1); box-shadow: 0 8px 32px rgba(56, 189, 248, 0.4); }
+    @keyframes menu-pulse {
+        0% { transform: scale(1.0); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1.0); }
     }
 
     [data-testid="collapsedControl"] svg {
         fill: white !important;
-        width: 18px !important;
-        height: 18px !important;
+        width: 22px !important;
+        height: 22px !important;
     }
 
     /* Mobile Sidebar Toggle Fix */
     @media (max-width: 768px) {
         [data-testid="collapsedControl"] {
-            top: 0.8rem !important;
-            left: 0.8rem !important;
-            width: 90px !important;
-            height: 38px !important;
+            top: 0.7rem !important;
+            right: 0.7rem !important;
+            padding: 0 1.2rem !important;
+            height: 44px !important;
+        }
+        [data-testid="collapsedControl"]::after {
+            content: "MENU" !important;
         }
     }
 
