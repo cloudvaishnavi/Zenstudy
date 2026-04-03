@@ -77,15 +77,42 @@ def inject_css() -> None:
     }
 
     header[data-testid="stHeader"] { 
-        background: transparent !important;
+        background: rgba(6, 6, 9, 0.6) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        height: 3.5rem !important;
+        visibility: visible !important;
     }
-    [data-testid="stToolbar"], 
-    .stDeployButton, 
-    #GithubIcon { 
-        visibility: hidden !important; 
+
+    /* ── High-Visibility Native Sidebar Toggle ── */
+    button[data-testid="stHeaderSidebarControl"],
+    button[data-testid="stSidebarCollapseButton"] {
+        background-color: var(--blue) !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 0 15px var(--blue-glow) !important;
+        z-index: 1000001 !important;
+        border: 2px solid white !important;
+        transition: all 0.3s ease !important;
+    }
+    button[data-testid="stHeaderSidebarControl"]:hover,
+    button[data-testid="stSidebarCollapseButton"]:hover {
+        transform: scale(1.1) !important;
+        box-shadow: 0 0 25px var(--blue) !important;
+    }
+
+    [data-testid="stToolbar"] {
+        visibility: visible !important;
+    }
+    .stDeployButton, #GithubIcon { 
         display: none !important; 
     }
-    #MainMenu, footer { visibility: hidden !important; display: none !important; }
+    footer { visibility: hidden !important; }
 
     /* Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
@@ -94,11 +121,6 @@ def inject_css() -> None:
         -webkit-backdrop-filter: blur(25px) !important;
         border-right: 1px solid var(--border) !important;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    /* ── Native UI Elements ── */
-    [data-testid="stHeader"] { 
-        background: transparent !important;
     }
 
     .block-container {
