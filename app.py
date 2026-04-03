@@ -74,11 +74,7 @@ nav[data-testid="stSidebarNav"] { display:none !important; }
     }
     [data-testid="column"] { min-width:100% !important; margin-bottom: 0.8rem !important; }
     
-    /* Make the toggle button more obvious when closed */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
-        visibility: visible !important;
-    }
+    /* Make the toggle button more obvious when closed - Handled in style.py now */
 }
 .block-container { padding:4.5rem 1.8rem 3rem !important; max-width:1400px !important; }
 </style>

@@ -71,14 +71,14 @@ def inject_css() -> None:
 
     html, body, [data-testid="stAppViewContainer"] {
         background-color: var(--bg) !important;
-        background-image: radial-gradient(circle at 10% 20%, var(--border-glow), transparent 25%),
-                          radial-gradient(circle at 90% 80%, var(--border-glow), transparent 25%) !important;
         color: var(--text) !important;
         font-family: 'Inter', sans-serif !important;
         transition: all 0.4s ease !important;
     }
 
-    header[data-testid="stHeader"], 
+    header[data-testid="stHeader"] { 
+        background: transparent !important;
+    }
     [data-testid="stToolbar"], 
     .stDeployButton, 
     #GithubIcon { 
@@ -96,46 +96,41 @@ def inject_css() -> None:
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* ── Sidebar Toggle Button (Mobile & Desktop) ── */
-    [data-testid="collapsedControl"], 
-    [data-testid="stSidebarCollapseButton"] {
-        background: var(--surface2) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid var(--border2) !important;
+    /* ── Sidebar Toggle Button (FAB) ── */
+    [data-testid="collapsedControl"] {
+        background: var(--blue) !important;
         border-radius: 50% !important;
-        width: 42px !important;
-        height: 42px !important;
+        width: 44px !important;
+        height: 44px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-        transition: all 0.3s ease !important;
-        z-index: 1000001 !important;
+        box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4) !important;
+        border: 2px solid white !important;
+        position: fixed !important;
+        top: 1.5rem !important;
+        left: 1.5rem !important;
+        z-index: 1000002 !important;
+        cursor: pointer !important;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }
+    
+    [data-testid="collapsedControl"]:hover {
+        transform: scale(1.15) !important;
+        background: var(--blue-dark) !important;
     }
 
-    [data-testid="collapsedControl"]:hover,
-    [data-testid="stSidebarCollapseButton"]:hover {
-        transform: scale(1.1) !important;
-        border-color: var(--blue) !important;
-        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4) !important;
-        background: var(--surface3) !important;
+    [data-testid="collapsedControl"] svg {
+        fill: white !important;
+        width: 26px !important;
+        height: 26px !important;
     }
 
-    /* Positioning the 'Open' button specifically on mobile */
-    @media (max-width: 768px) {
-        [data-testid="collapsedControl"] {
-            top: 20px !important;
-            left: 20px !important;
-            position: fixed !important;
-            border-top: 2px solid var(--blue) !important;
-        }
-        
-        /* Make the inner icon bigger & themed */
-        [data-testid="collapsedControl"] svg {
-            fill: var(--blue) !important;
-            width: 24px !important;
-            height: 24px !important;
-        }
+    /* Adjust main padding when sidebar is closed */
+    [data-testid="stSidebarCollapseButton"] {
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-dim) !important;
     }
 
     .block-container {
