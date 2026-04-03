@@ -413,13 +413,13 @@ c_pill = "rgba(14, 165, 233, 0.1)" if is_light else "rgba(56, 189, 248, 0.08)"
 
 # ── Landing Hero Section ──────────────────────────────────────────
 st.markdown(f"""
-<div style="text-align:center; padding: 4rem 1rem 3.5rem; background: radial-gradient(circle at center, var(--surface) 0%, transparent 100%); margin-bottom: 2rem; border-radius: 24px; border: 1px solid var(--border);">
-    <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧠</div>
-    <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 3.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; margin-bottom: 0.5rem; line-height: 1.1;">
+<div style="text-align:center; padding: 1.2rem 1rem 1rem; background: radial-gradient(circle at center, var(--surface) 0%, transparent 100%); margin-bottom: 1.5rem; border-radius: 20px; border: 1px solid var(--border);">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧠</div>
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; margin-bottom: 0.4rem; line-height: 1.1;">
         AI Behavior Pattern <span style="background: linear-gradient(90deg, var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Analyzer</span>
     </h1>
-    <p style="font-size: 1.25rem; color: var(--text-dim); max-width: 700px; margin: 0 auto 2.2rem; line-height: 1.6; font-weight: 400;">
-        Analyze your focus, detect distractions, and get personalized productivity insights powered by advanced AI models.
+    <p style="font-size: 0.95rem; color: var(--text-dim); max-width: 500px; margin: 0 auto; line-height: 1.4; font-weight: 400;">
+        Analyze focus, detect distractions, and get personalized insights powered by AI.
     </p>
 </div>
 """, unsafe_allow_html=True)
