@@ -22,57 +22,60 @@ from config import FOCUS_MODEL_PATH, DISTRACTION_MODEL_PATH
 
 def _render_score_card(score: float, label: str, icon: str, color_var: str):
     """Render a premium score card with a progress bar."""
-    st.markdown(textwrap.dedent(f"""
-    <div class="premium-card" style="height: 100%;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{label}</div>
-            <div style="font-size: 1.5rem;">{icon}</div>
-        </div>
-        <div style="font-family: 'Space Grotesk', sans-serif; font-size: 3rem; font-weight: 800; color: var({color_var}); line-height: 1; margin-bottom: 0.5rem;">
-            {score:.0f}<span style="font-size: 1.2rem; color: var(--text-dim); font-weight: 500;">/100</span>
-        </div>
-        <div style="background: var(--surface); border-radius: 99px; height: 10px; overflow: hidden; margin-top: 1.5rem;">
-            <div style="width: {score}%; height: 100%; background: var({color_var}); border-radius: 99px; box-shadow: 0 0 10px var({color_var});"></div>
-        </div>
-    </div>
-    """), unsafe_allow_html=True)
+    html = (
+        f'<div class="premium-card" style="height: 100%;">'
+        f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">'
+        f'<div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">{label}</div>'
+        f'<div style="font-size: 1.5rem;">{icon}</div>'
+        f'</div>'
+        f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 3rem; font-weight: 800; color: var({color_var}); line-height: 1; margin-bottom: 0.5rem;">'
+        f'{score:.0f}<span style="font-size: 1.2rem; color: var(--text-dim); font-weight: 500;">/100</span>'
+        f'</div>'
+        f'<div style="background: var(--surface); border-radius: 99px; height: 10px; overflow: hidden; margin-top: 1.5rem;">'
+        f'<div style="width: {score}%; height: 100%; background: var({color_var}); border-radius: 99px; box-shadow: 0 0 10px var({color_var});"></div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def _render_list_card(title: str, items: list[str], icon: str):
     """Render a card with a list of items and icons."""
-    html = f"""
-    <div class="premium-card" style="height: 100%;">
-        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">
-            <div style="font-size: 1.4rem;">{icon}</div>
-            <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">{title}</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-    """
+    html = (
+        f'<div class="premium-card" style="height: 100%;">'
+        f'<div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;">'
+        f'<div style="font-size: 1.4rem;">{icon}</div>'
+        f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">{title}</div>'
+        f'</div>'
+        f'<div style="display: flex; flex-direction: column; gap: 1rem;">'
+    )
     for item in items:
-        if not item.strip(): continue
-        html += f"""
-            <div style="display: flex; gap: 0.8rem; align-items: flex-start;">
-                <div style="color: var(--blue); margin-top: 0.2rem;">●</div>
-                <div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{item}</div>
-            </div>
-        """
+        clean_item = item.strip().replace("●", "").strip()
+        if not clean_item: continue
+        html += (
+            f'<div style="display: flex; gap: 0.8rem; align-items: flex-start;">'
+            f'<div style="color: var(--blue); margin-top: 0.2rem;">●</div>'
+            f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>'
+            f'</div>'
+        )
     html += "</div></div>"
-    st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     
     # ── Header ──────────────────────────────────────────────────
-    st.markdown("""
-    <div style="margin-bottom: 2.5rem;">
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; color: var(--text); letter-spacing: -0.02em;">
-            AI Behavior <span style="color: var(--blue);">Insights</span>
-        </h2>
-        <p style="color: var(--text-dim); font-size: 1.05rem;">
-            Advanced pattern detection and productivity forecasting.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="margin-bottom: 2.5rem;">'
+        f'<h2 style="font-family: \'Space Grotesk\', sans-serif; font-weight: 800; color: var(--text); letter-spacing: -0.02em;">'
+        f'AI Behavior <span style="color: var(--blue);">Insights</span>'
+        f'</h2>'
+        f'<p style="color: var(--text-dim); font-size: 1.05rem;">'
+        f'Advanced pattern detection and productivity forecasting.'
+        f'</p>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
 
     tab1, tab2 = st.tabs(["⚡ Run Analysis", "📜 Analysis History"])
 
@@ -162,7 +165,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             st.success("Analysis Complete!")
             st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # ── Latest Result UI ────────────────────────────────────────
         history = get_ai_history(current_user_id)
@@ -180,17 +183,18 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with c4: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(textwrap.dedent(f"""
-            <div class="premium-card">
-                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
-                    <div style="font-size: 1.4rem;">🧠</div>
-                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>
-                </div>
-                <div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">
-{latest["explanation"]}
-                </div>
-            </div>
-            """), unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="premium-card">'
+                f'<div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">'
+                f'<div style="font-size: 1.4rem;">🧠</div>'
+                f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>'
+                f'</div>'
+                f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">'
+                f'{latest["explanation"].strip()}'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
         else:
             st.info("No analysis data available. Click 'Start Analysis' above to get your first AI report.")
 
