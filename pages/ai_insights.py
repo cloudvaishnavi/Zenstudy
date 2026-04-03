@@ -36,7 +36,7 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
         f'</div>'
         f'</div>'
     )
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
 
 
 def _render_list_card(title: str, items: list[str], icon: str):
@@ -59,7 +59,7 @@ def _render_list_card(title: str, items: list[str], icon: str):
             f'</div>'
         )
     html += "</div></div>"
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
 
 
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
@@ -183,17 +183,16 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with c4: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(
+            st.html(
                 f'<div class="premium-card">'
                 f'<div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">'
                 f'<div style="font-size: 1.4rem;">🧠</div>'
                 f'<div style="font-family: \'Space Grotesk\', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>'
                 f'</div>'
                 f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">'
-                f'{latest["explanation"].strip()}'
+                f'{latest["explanation"].strip().replace("\n", " ")}'
                 f'</div>'
-                f'</div>',
-                unsafe_allow_html=True
+                f'</div>'
             )
         else:
             st.info("No analysis data available. Click 'Start Analysis' above to get your first AI report.")
