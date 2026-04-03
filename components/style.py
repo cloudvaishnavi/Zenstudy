@@ -102,20 +102,23 @@ def inject_css() -> None:
         background: transparent !important;
     }
 
-    /* Style for the 'OPEN MENU' Streamlit Button specifically */
-    div.stButton > button {
-        border-radius: 99px !important;
-        padding: 0.5rem 1.5rem !important;
-        font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.05em !important;
+    /* Style for the 'Icon' Streamlit Buttons (like Sidebar Toggle) */
+    div.stButton > button:has(div:contains("☰")) {
+        border-radius: 50% !important;
+        width: 42px !important;
+        height: 42px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.2rem !important;
         border: 1px solid var(--border) !important;
         background: var(--surface) !important;
         backdrop-filter: blur(10px) !important;
         transition: all 0.3s ease !important;
         box-shadow: var(--shadow) !important;
     }
-    div.stButton > button:hover {
+    div.stButton > button:has(div:contains("☰")):hover {
         background: var(--blue) !important;
         color: white !important;
         box-shadow: 0 0 20px rgba(56, 189, 248, 0.4) !important;

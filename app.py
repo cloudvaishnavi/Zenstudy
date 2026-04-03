@@ -412,9 +412,12 @@ c_border = "rgba(0,0,0,0.06)" if is_light else "rgba(255,255,255,0.08)"
 c_pill = "rgba(14, 165, 233, 0.1)" if is_light else "rgba(56, 189, 248, 0.08)"
 
 # ── Sidebar Toggle Button ──────────────────────────────────────────
-col_btn, _ = st.columns([1, 4])
-if col_btn.button("☰ OPEN MENU", type="secondary", use_container_width=True):
-    st.sidebar_toggle()
+col_btn, _ = st.columns([0.4, 10])
+if col_btn.button("☰", type="secondary", use_container_width=True):
+    if hasattr(st, "sidebar_toggle"):
+        st.sidebar_toggle()
+    else:
+        st.warning("Sidebar toggle is not supported in this version of Streamlit. Please use the default toggle button at the top left.")
 
 # ── Landing Hero Section ──────────────────────────────────────────
 st.markdown(f"""
