@@ -96,33 +96,9 @@ def inject_css() -> None:
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* ── Reliable Sidebar Toggle Button Styling ── */
+    /* ── Native UI Elements ── */
     [data-testid="stHeader"] { 
-        z-index: 999999 !important;
         background: transparent !important;
-    }
-
-    /* Style for the 'Icon' Streamlit Buttons (like Sidebar Toggle) */
-    div.stButton > button:has(div:contains("☰")) {
-        border-radius: 50% !important;
-        width: 42px !important;
-        height: 42px !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 1.2rem !important;
-        border: 1px solid var(--border) !important;
-        background: var(--surface) !important;
-        backdrop-filter: blur(10px) !important;
-        transition: all 0.3s ease !important;
-        box-shadow: var(--shadow) !important;
-    }
-    div.stButton > button:has(div:contains("☰")):hover {
-        background: var(--blue) !important;
-        color: white !important;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4) !important;
-        border-color: var(--blue) !important;
     }
 
     .block-container {
