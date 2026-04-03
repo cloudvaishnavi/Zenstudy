@@ -96,65 +96,75 @@ def inject_css() -> None:
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* ── Sidebar Toggle Button (MENU PILL) - MOVED TO TOP RIGHT ── */
-    [data-testid="collapsedControl"] {
-        background: linear-gradient(135deg, var(--blue), var(--purple)) !important;
+    /* ── Sidebar Toggle Button (MENU PILL) - FORCED VISIBILITY ── */
+    [data-testid="collapsedControl"], 
+    button[data-testid="stSidebarCollapseButton"] {
+        background: linear-gradient(135deg, #ef4444, #3b82f6) !important; /* Red to Blue */
         border-radius: 99px !important;
-        padding: 0 1.5rem !important;
-        height: 48px !important;
+        padding: 0 2rem !important;
+        height: 52px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0.6rem !important;
-        box-shadow: 0 10px 40px rgba(56, 189, 248, 0.5) !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
+        gap: 0.8rem !important;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.8) !important;
+        border: 4px solid white !important;
         position: fixed !important;
-        top: 1.2rem !important;
-        right: 1.2rem !important; /* Moved to Right */
-        left: auto !important;
-        z-index: 10000000 !important;
+        top: 2rem !important;
+        right: 2rem !important; /* Top Right */
+        z-index: 20000000 !important;
         cursor: pointer !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        animation: menu-pulse 2s infinite ease-in-out !important;
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        animation: menu-pulse-huge 1.5s infinite ease-in-out !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
-    [data-testid="collapsedControl"]::after {
-        content: "OPEN SIDEBAR" !important;
+    [data-testid="collapsedControl"]::after,
+    button[data-testid="stSidebarCollapseButton"]::after {
+        content: "CLICK FOR MENU" !important;
         color: white !important;
         font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 0.85rem !important;
+        font-weight: 900 !important;
+        font-size: 1rem !important;
         letter-spacing: 0.05em !important;
         display: inline-block !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
     }
 
-    [data-testid="collapsedControl"]:hover {
-        transform: scale(1.1) rotate(2deg) !important;
-        box-shadow: 0 15px 50px rgba(56, 189, 248, 0.7) !important;
+    [data-testid="collapsedControl"]:hover,
+    button[data-testid="stSidebarCollapseButton"]:hover {
+        transform: scale(1.15) !important;
+        box-shadow: 0 0 50px rgba(56, 189, 248, 1) !important;
     }
 
-    @keyframes menu-pulse {
-        0% { transform: scale(1.0); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1.0); }
+    @keyframes menu-pulse-huge {
+        0% { transform: scale(1.0); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+        50% { transform: scale(1.1); box-shadow: 0 0 60px rgba(56, 189, 248, 0.9); }
+        100% { transform: scale(1.0); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
     }
 
-    [data-testid="collapsedControl"] svg {
+    [data-testid="collapsedControl"] svg,
+    button[data-testid="stSidebarCollapseButton"] svg {
         fill: white !important;
-        width: 22px !important;
-        height: 22px !important;
+        width: 26px !important;
+        height: 26px !important;
+        display: block !important;
     }
 
     /* Mobile Sidebar Toggle Fix */
     @media (max-width: 768px) {
-        [data-testid="collapsedControl"] {
-            top: 0.7rem !important;
-            right: 0.7rem !important;
-            padding: 0 1.2rem !important;
-            height: 44px !important;
+        [data-testid="collapsedControl"],
+        button[data-testid="stSidebarCollapseButton"] {
+            top: 1rem !important;
+            right: 1rem !important;
+            padding: 0 1.5rem !important;
+            height: 48px !important;
         }
-        [data-testid="collapsedControl"]::after {
+        [data-testid="collapsedControl"]::after,
+        button[data-testid="stSidebarCollapseButton"]::after {
             content: "MENU" !important;
+            font-size: 0.9rem !important;
         }
     }
 
