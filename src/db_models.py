@@ -123,6 +123,7 @@ class AIAnalysis(Base):
     distraction_risk: Mapped[float] = mapped_column(nullable=False)
     insights: Mapped[str] = mapped_column(nullable=False)
     suggestions: Mapped[str] = mapped_column(nullable=False)
+    explanation: Mapped[str] = mapped_column(nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="analyses")
 

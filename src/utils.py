@@ -13,8 +13,18 @@ from src.db_models import User, StudySession, WeeklyGoal, Achievement, Feedback,
 # ── Schema & migrations ────────────────────────────────────────────────────
 
 def ensure_schema() -> None:
-    """Create tables using SQLAlchemy."""
+    """Create tables using SQLAlchemy and run manual migrations."""
     init_db()
+    
+    # Manual migration for 'explanation' column in ai_analyses
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE ai_analyses ADD COLUMN explanation VARCHAR"))
+            conn.commit()
+        except Exception:
+            # Column likely already exists or table doesn't exist yet
+            pass
 
 
 # ── Generic helpers ────────────────────────────────────────────────────────
@@ -212,7 +222,8 @@ def insert_ai_analysis(row: dict) -> None:
             productivity_score=row["productivity_score"],
             distraction_risk=row["distraction_risk"],
             insights=row["insights"],
-            suggestions=row["suggestions"]
+            suggestions=row["suggestions"],
+            explanation=row.get("explanation", "No explanation available.")
         )
         db.add(analysis)
         db.commit()
@@ -237,7 +248,8 @@ def get_ai_history(user_id: int) -> pd.DataFrame:
                 "productivity_score": a.productivity_score,
                 "distraction_risk": a.distraction_risk,
                 "insights": a.insights,
-                "suggestions": a.suggestions
+                "suggestions": a.suggestions,
+                "explanation": a.explanation
             })
         return pd.DataFrame(data)
     finally:

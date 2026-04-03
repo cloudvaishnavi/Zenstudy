@@ -158,50 +158,149 @@ def focus_pivot(df: pd.DataFrame, techniques: list, subjects: list) -> pd.DataFr
 
 # ── Smart recommendations ──────────────────────────────────────────────────
 
+# ── AI Logic Upgrade ───────────────────────────────────────────────────────
+
+class AIProcessor:
+    """
+    Advanced AI Engine for behavioral analysis and productivity forecasting.
+    Implements a weighted scoring system and pattern detection.
+    """
+    
+    def __init__(self, df: pd.DataFrame):
+        self.df = enrich(df) if not df.empty else df
+        
+    def calculate_score(self, current_focus: float, current_distractions: int, current_duration: int) -> dict:
+        """
+        Calculate a 0-100 productivity score based on:
+        40% Focus / 30% Distractions / 20% Duration / 10% Consistency
+        """
+        # 1. Focus Component (0-100)
+        focus_comp = current_focus * 0.4
+        
+        # 2. Distraction Component (Penalty based, starts at 30)
+        # Assuming 0 distractions = 30 points, 5+ distractions = 0 points
+        dist_penalty = min(30, current_distractions * 6)
+        dist_comp = 30 - dist_penalty
+        
+        # 3. Duration Component (0-20)
+        # Optimal window 30-90 mins. Below 25 or above 120 gets lower points.
+        if 30 <= current_duration <= 90:
+            dur_comp = 20
+        elif current_duration < 30:
+            dur_comp = (current_duration / 30) * 20
+        else:
+            dur_comp = max(0, 20 - ((current_duration - 90) / 10))
+            
+        # 4. Consistency Component (0-10)
+        consistency_comp = 5 # default
+        explanation_consistency = "Standard consistency based on baseline."
+        
+        if not self.df.empty:
+            recent = self.df.sort_values(["date", "start_time"]).tail(7)
+            if len(recent) >= 3:
+                # Calculate variance in productivity
+                prod_std = recent["productivity"].std()
+                if prod_std < 0.5: # Very consistent
+                    consistency_comp = 10
+                    explanation_consistency = "Excellent consistency in recent sessions (+10 pts)."
+                elif prod_std < 1.0:
+                    consistency_comp = 8
+                    explanation_consistency = "Good session stability (+8 pts)."
+                else:
+                    consistency_comp = 3
+                    explanation_consistency = "High variability in recent performance (+3 pts)."
+
+        total_score = focus_comp + dist_comp + dur_comp + consistency_comp
+        
+        factors = {
+            "focus": focus_comp,
+            "distractions": dist_comp,
+            "duration": dur_comp,
+            "consistency": consistency_comp,
+            "consistency_text": explanation_consistency
+        }
+        
+        return {"score": round(total_score, 1), "factors": factors}
+
+    def detect_patterns(self) -> list[str]:
+        """Detect behavioral patterns from historical data."""
+        patterns = []
+        if self.df.empty or len(self.df) < 5:
+            return ["Insufficient data for deep pattern detection. Keep logging!"]
+            
+        recent = self.df.sort_values(["date", "start_time"]).tail(15)
+        
+        # 1. Fatigue Pattern (Duration vs Distractions)
+        long_sessions = recent[recent["duration_min"] > 60]
+        if not long_sessions.empty:
+            avg_dist_long = long_sessions["distractions"].mean()
+            avg_dist_short = recent[recent["duration_min"] <= 60]["distractions"].mean()
+            if avg_dist_long > avg_dist_short + 1:
+                patterns.append("⚠️ **Fatigue Trigger**: Your distractions increase by " + 
+                               f"{((avg_dist_long/avg_dist_short)-1)*100:.0f}%" if avg_dist_short > 0 else "significantly" + 
+                               " in sessions longer than 60 minutes.")
+
+        # 2. Peak Performance Time
+        if "time_bucket" in recent.columns:
+            time_stats = recent.groupby("time_bucket")["focus_score"].mean()
+            if not time_stats.empty:
+                best_bucket = time_stats.idxmax()
+                patterns.append(f"🌟 **Prime Window**: You achieve peak focus ({time_stats.max():.0f}%) during the **{best_bucket}** block.")
+
+        # 3. Caffeine Sensitivity
+        if "caffeine_mg" in recent.columns and recent["caffeine_mg"].max() > 0:
+            high_caf = recent[recent["caffeine_mg"] > 150]
+            low_caf = recent[recent["caffeine_mg"] <= 150]
+            if not high_caf.empty and not low_caf.empty:
+                if high_caf["focus_score"].mean() < low_caf["focus_score"].mean() - 10:
+                    patterns.append("☕ **Caffeine Crash**: High caffeine intake (>150mg) correlates with a noticeable focus drop for you.")
+
+        return patterns
+
+    def generate_explanation(self, result: dict, patterns: list[str]) -> str:
+        """Create a human-readable explanation of the score."""
+        f = result["factors"]
+        explanation = f"### Why this score?\n"
+        explanation += f"- **Focus Quality**: Provided {f['focus']:.1f}/40 points based on target focus.\n"
+        explanation += f"- **Distraction Control**: Earned {f['distractions']:.1f}/30 points. "
+        explanation += "Excellent focus!" if f['distractions'] >= 25 else "Try to minimize interruptions."
+        explanation += f"\n- **Session Sizing**: {f['duration']:.1f}/20 points for duration efficiency.\n"
+        explanation += f"- **Consistency**: {f['consistency_text']}\n"
+        
+        if patterns and "Insufficient" not in patterns[0]:
+            explanation += "\n**Behavioral Context:**\n"
+            explanation += "\n".join([f"- {p}" for p in patterns[:2]])
+            
+        return explanation
+
 def generate_recommendations(
     df: pd.DataFrame,
     focus_score: float | None = None,
-    distraction_risk: int | None = None,
+    distraction_risk: float | None = None,
 ) -> list[str]:
-    """Rule-based smart recommendations from session history + model outputs."""
-    recs: list[str] = []
-
-    if focus_score is not None and focus_score < 50:
-        recs += [
-            "Try **Pomodoro** (25 min focus + 5 min break) — short bursts improve retention.",
-            "Keep sessions **25–45 minutes** until focus improves.",
-        ]
-
-    if distraction_risk is not None and distraction_risk >= 60:
-        recs += [
-            "Enable **Do Not Disturb** and put your phone in another room.",
-            "Close extra browser tabs before starting.",
-        ]
-
+    """Smart suggestions based on current parameters and history."""
+    recs = []
+    
+    # Context-aware rules
+    if distraction_risk is not None and distraction_risk > 50:
+        recs.append("🛡️ **Environment Shield**: Switch to 'Airplane Mode' for this session.")
+        
+    if focus_score is not None and focus_score < 60:
+        recs.append("🧠 **Technique Pivot**: Use 'Active Recall' instead of passive reading to boost engagement.")
+    
     if not df.empty:
-        try:
-            recent = df.sort_values(["date", "start_time"]).tail(10)
-            # Caffeine check
-            if recent["caffeine_mg"].notna().any() and recent["focus_score"].notna().any():
-                high_caf = recent[recent["caffeine_mg"] >= 250]
-                if (not high_caf.empty and
-                        float(high_caf["focus_score"].mean()) < float(recent["focus_score"].mean())):
-                    recs.append("Consider **reducing caffeine** — high intake may be hurting focus (aim 100–200 mg).")
+        # History-based rules
+        recent = df.tail(5)
+        if recent["distractions"].sum() > 10:
+            recs.append("📍 **Location Change**: Your recent distraction count is high. Try a library or a different room.")
+        
+        if recent["mood"].mean() < 3:
+            recs.append("🧘 **Mindfulness Gap**: Start with a 2-minute breathing exercise to reset your mood.")
 
-            # Low mood check
-            if recent["mood"].notna().any() and float(recent["mood"].mean()) < 3:
-                recs.append("Your recent mood has been low — try a **5-min walk** before studying.")
-
-            # High distraction check from data
-            if recent["distractions"].notna().any() and float(recent["distractions"].mean()) > 3:
-                recs.append("You've had many distractions lately — try a **dedicated study space**.")
-        except Exception:
-            pass
-
+    # Fallback
     if not recs:
         recs = [
-            "Your routine looks consistent — keep it up! 🎉",
-            "Start your next session with the **hardest task first** (eat the frog).",
+            "🚀 **Full Speed Ahead**: Your current setup is optimal for deep work.",
+            "📅 **Consistency Lock**: You're on a roll. Try to start tomorrow at this same time."
         ]
-
     return recs

@@ -9,7 +9,7 @@ import streamlit as st
 from datetime import datetime
 
 from config import SUBJECTS, TECHNIQUES, FOCUS_HIGH, FOCUS_MEDIUM
-from src.analytics import generate_recommendations
+from src.analytics import generate_recommendations, AIProcessor
 from src.model import load_focus_model, load_distraction_model
 from src.llm_coach import is_configured as coach_is_configured, ask_coach
 from src.utils import (
@@ -105,52 +105,55 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             for i, step in enumerate(steps):
                 status_placeholder.markdown(f'<div style="text-align: center; color: var(--blue); font-weight: 600; margin-top: 1rem;">{step}</div>', unsafe_allow_html=True)
                 progress_placeholder.progress((i + 1) / len(steps))
-                time.sleep(0.6)
+                time.sleep(0.4)
             
-            # ── Step 2: Prediction Logic ──
+            # ── Step 2: AI Engine Processing ──
+            processor = AIProcessor(df)
+            
             focus_pipe = load_focus_model(FOCUS_MODEL_PATH)
             risk_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
             
-            df_in = pd.DataFrame([{
+            # 2a. Predict focus & risk
+            pred_df = pd.DataFrame([{
                 "duration_min": dur, "subject": sub, "technique": tech,
-                "distractions": 2, "mood": mood, "caffeine_mg": caf,
+                "mood": mood, "caffeine_mg": caf,
             }])
             
-            # Default values if models aren't ready
-            focus_score = 75.0
-            distraction_risk = 30.0
-            
+            raw_focus = 75.0
             if focus_pipe:
-                focus_score = max(0.0, min(100.0, float(focus_pipe.predict(df_in)[0])))
+                raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
             
+            now = datetime.now()
+            risk_df = pd.DataFrame([{
+                "duration_min": dur, "subject": sub, "technique": tech,
+                "mood": mood, "caffeine_mg": caf,
+                "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0
+            }])
+            
+            distraction_risk = 30.0
             if risk_pipe:
-                now = datetime.now()
-                d_in = pd.DataFrame([{
-                    "duration_min": dur, "subject": sub, "technique": tech,
-                    "mood": mood, "caffeine_mg": caf,
-                    "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0
-                }])
-                pred_count = float(risk_pipe.predict(d_in)[0])
+                pred_count = float(risk_pipe.predict(risk_df)[0])
                 distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
 
-            # ── Step 3: Insight Generation ──
-            insight_list = []
-            if focus_score > 80: insight_list.append("Your chosen parameters align perfectly with your peak performance windows.")
-            else: insight_list.append("Adjusting environment or technique could yield a 15-20% focus gain.")
+            # 2b. Calculate Advanced Score & Explanation
+            # Estimate distraction count from predicted risk for the scoring engine
+            est_distractions = int((distraction_risk / 80) * 3) if distraction_risk > 0 else 0
+            analysis_result = processor.calculate_score(raw_focus, current_distractions=est_distractions, current_duration=dur)
+            patterns = processor.detect_patterns()
+            explanation = processor.generate_explanation(analysis_result, patterns)
             
-            if dur > 90: insight_list.append("Long sessions detected: mental fatigue typically sets in after 75 minutes for you.")
-            if caf > 200: insight_list.append("High caffeine levels might cause jitters, potentially lowering precision in complex tasks.")
+            # 2c. Final Insights & Recs
+            recs = generate_recommendations(df, focus_score=raw_focus, distraction_risk=distraction_risk)
             
-            recs = generate_recommendations(df, focus_score=focus_score, distraction_risk=int(distraction_risk))
-            
-            # ── Step 4: Save to Database ──
+            # ── Step 3: Save to Database ──
             insert_ai_analysis({
                 "user_id": current_user_id,
                 "input_summary": f"{sub} | {tech} | {dur} min",
-                "productivity_score": focus_score,
+                "productivity_score": analysis_result["score"],
                 "distraction_risk": distraction_risk,
-                "insights": "\n".join(insight_list),
-                "suggestions": "\n".join(recs)
+                "insights": "\n".join(patterns),
+                "suggestions": "\n".join(recs),
+                "explanation": explanation
             })
             
             progress_placeholder.empty()
@@ -171,11 +174,22 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with c1: _render_score_card(latest["productivity_score"], "Productivity Forecast", "🎯", "--blue")
             with c2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "⚠️", "--purple" if latest["distraction_risk"] > 50 else "--teal")
             
-            st.markdown("<br>", unsafe_allow_html=True)
-            
             c3, c4 = st.columns(2)
             with c3: _render_list_card("Behavioral Insights", latest["insights"].split("\n"), "🔍")
             with c4: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="premium-card">
+                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
+                    <div style="font-size: 1.4rem;">🧠</div>
+                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text);">AI Explanation</div>
+                </div>
+                <div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6; white-space: pre-wrap;">
+{latest["explanation"]}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.info("No analysis data available. Click 'Start Analysis' above to get your first AI report.")
 
@@ -202,6 +216,9 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                     st.markdown("**Suggestions**")
                     for line in row["suggestions"].split("\n"):
                         if line.strip(): st.markdown(f"- {line}")
+                        
+                    with st.expander("🔍 System Explanation"):
+                        st.markdown(row["explanation"])
 
     st.markdown("---")
     # ── AI Study Coach ────────────────────────────────────────────
