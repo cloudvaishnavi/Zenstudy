@@ -47,7 +47,13 @@ def _render_list_card(title: str, items: list[str], icon: str):
             return
 
         for item in items:
+            # Aggressively clean legacy HTML and separators
             clean_item = item.strip().replace("●", "").replace("*", "").strip()
+            # Remove any legacy <div> tags or multi-dots that might be in the DB
+            import re
+            clean_item = re.sub(r'<[^>]+>', '', clean_item) # Strip all HTML tags
+            clean_item = clean_item.replace("..", "").strip() # Remove dots used as separators
+            
             if not clean_item: continue
             
             # Using columns for the bullet point layout - 100% stable
@@ -124,7 +130,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             
             sc1, sc2 = st.columns(2)
             with sc1: _render_score_card(latest["productivity_score"], "Productivity", "🎯", "--blue")
-            with sc2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "⚠️", "--purple" if latest["distraction_risk"] > 50 else "--teal")
+            with sc2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "", "--purple" if latest["distraction_risk"] > 50 else "--teal")
             
             lc1, lc2 = st.columns(2)
             with lc1: _render_list_card("Behavioral Insights", latest["insights"].split("\n"), "🔍")
@@ -154,7 +160,10 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                     st.markdown("**Insights**")
                     raw_insights = row["insights"].strip()
                     if raw_insights.startswith("<div"):
-                        st.markdown(raw_insights, unsafe_allow_html=True)
+                        import re
+                        raw_insights = re.sub(r'<[^>]+>', '', raw_insights).replace("..", "").strip()
+                        for line in raw_insights.split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip()}")
                     else:
                         for line in raw_insights.split("\n"):
                             if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
@@ -162,7 +171,10 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                     st.markdown("**Suggestions**")
                     raw_suggestions = row["suggestions"].strip()
                     if raw_suggestions.startswith("<div"):
-                        st.markdown(raw_suggestions, unsafe_allow_html=True)
+                        import re
+                        raw_suggestions = re.sub(r'<[^>]+>', '', raw_suggestions).replace("..", "").strip()
+                        for line in raw_suggestions.split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip()}")
                     else:
                         for line in raw_suggestions.split("\n"):
                             if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
