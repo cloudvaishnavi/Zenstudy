@@ -125,15 +125,16 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         if not history.empty:
             latest = history.iloc[0]
             st.markdown("<br>", unsafe_allow_html=True)
-            section_header("📊 Latest Insights Overview")
-            
-            sc1, sc2 = st.columns(2)
-            with sc1: _render_score_card(latest["productivity_score"], "Productivity", "🎯", "--blue")
-            with sc2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "", "--purple" if latest["distraction_risk"] > 50 else "--teal")
-            
             lc1, lc2 = st.columns(2)
-            with lc1: _render_list_card("Behavioral Insights", (latest["insights"] or "").split("\n"), "🔍")
-            with lc2: _render_list_card("Actionable Suggestions", (latest["suggestions"] or "").split("\n"), "💡")
+            
+            # Use safe retrieval for lists
+            def _get_safe_list(val: any) -> list[str]:
+                if pd.isna(val) or val is None:
+                    return []
+                return str(val).split("\n")
+
+            with lc1: _render_list_card("Behavioral Insights", _get_safe_list(latest.get("insights")), "🔍")
+            with lc2: _render_list_card("Actionable Suggestions", _get_safe_list(latest.get("suggestions")), "💡")
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
@@ -168,7 +169,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                     for line in raw_sug_block.split("\n"):
                         if line.strip(): st.markdown(f"● {line.strip()}")
                     with st.expander("🔍 System Explanation"):
-                        st.markdown(row["explanation"])
+                        st.markdown(_clean_text(row.get("explanation", "")))
 
     st.markdown("---")
     section_header("🤖 AI Study Coach")
