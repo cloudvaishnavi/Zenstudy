@@ -35,12 +35,17 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
             </div>
         """, unsafe_allow_html=True)
 
-def _clean_text(text: any) -> str:
-    """Robustly clean text by stripping HTML and handling None/NaN values."""
-    if pd.isna(text) or text is None:
+def safe_text(value: any) -> str:
+    """Robustly convert any value to a string, handling None and NaN from pandas."""
+    if value is None or pd.isna(value):
         return ""
-    # Ensure it's a string
-    s = str(text)
+    return str(value)
+
+def _clean_text(text: any) -> str:
+    """Robustly clean text by stripping HTML."""
+    s = safe_text(text)
+    if not s:
+        return ""
     # Strip HTML tags
     s = re.sub(r'<[^>]+>', '', s)
     # Clean up legacy formatting
@@ -125,21 +130,27 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
         if not history.empty:
             latest = history.iloc[0]
             st.markdown("<br>", unsafe_allow_html=True)
-            lc1, lc2 = st.columns(2)
+            section_header("📊 Latest Insights Overview")
             
-            # Use safe retrieval for lists
-            def _get_safe_list(val: any) -> list[str]:
-                if pd.isna(val) or val is None:
-                    return []
-                return str(val).split("\n")
+            # Use safe retrieval for scores
+            prod_score = latest.get("productivity_score")
+            prod_score = float(prod_score) if prod_score is not None and not pd.isna(prod_score) else 0.0
+            
+            risk_score = latest.get("distraction_risk")
+            risk_score = float(risk_score) if risk_score is not None and not pd.isna(risk_score) else 0.0
 
-            with lc1: _render_list_card("Behavioral Insights", _get_safe_list(latest.get("insights")), "🔍")
-            with lc2: _render_list_card("Actionable Suggestions", _get_safe_list(latest.get("suggestions")), "💡")
+            sc1, sc2 = st.columns(2)
+            with sc1: _render_score_card(prod_score, "Productivity", "🎯", "--blue")
+            with sc2: _render_score_card(risk_score, "Distraction Risk", "", "--purple" if risk_score > 50 else "--teal")
+            
+            lc1, lc2 = st.columns(2)
+            with lc1: _render_list_card("Behavioral Insights", safe_text(latest.get("insights")).split("\n"), "🔍")
+            with lc2: _render_list_card("Actionable Suggestions", safe_text(latest.get("suggestions")).split("\n"), "💡")
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
-                clean_exp = _clean_text(latest.get("explanation", ""))
-                st.write(clean_exp)
+                clean_exp = _clean_text(latest.get("explanation"))
+                st.write(clean_exp if clean_exp else "No explanation available.")
         else:
             st.info("No analysis data available. Run your first analysis above!")
 
@@ -152,8 +163,13 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             for _, row in history.iterrows():
                 with st.expander(f"📅 {row['timestamp']} — {row['input_summary']}"):
                     c1, c2, c3 = st.columns([2, 2, 1])
-                    c1.metric("Productivity", f"{row['productivity_score']:.0f}/100")
-                    c2.metric("Distraction Risk", f"{row['distraction_risk']:.0f}%")
+                    p_score = row.get("productivity_score")
+                    p_score = float(p_score) if p_score is not None and not pd.isna(p_score) else 0.0
+                    d_score = row.get("distraction_risk")
+                    d_score = float(d_score) if d_score is not None and not pd.isna(d_score) else 10.0
+                    
+                    c1.metric("Productivity", f"{p_score:.0f}/100")
+                    c2.metric("Distraction Risk", f"{d_score:.0f}%")
                     if c3.button("🗑️ Delete", key=f"del_{row['id']}"):
                         delete_ai_analysis(row["id"], current_user_id)
                         st.rerun()
