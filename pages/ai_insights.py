@@ -96,6 +96,24 @@ def _render_list_card(title: str, items: any, icon: str):
             bc1.markdown(f'<div style="color: var(--blue); margin-top: 2px;">●</div>', unsafe_allow_html=True)
             bc2.markdown(f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>', unsafe_allow_html=True)
 
+def _safe_predict_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Sanitize a prediction DataFrame so sklearn pipelines with text transformers
+    (e.g. CountVectorizer, TfidfVectorizer, or custom regex-based transformers)
+    never receive None, NaN, or non-string values in categorical columns.
+    Numeric columns are coerced to float and NaNs filled with 0.
+    """
+    df = df.copy()
+    str_cols = ["subject", "technique"]
+    num_cols = ["duration_min", "mood", "caffeine_mg", "start_hour", "day_of_week", "is_weekend"]
+    for col in str_cols:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda v: "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v))
+    for col in num_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0).astype(float)
+    return df
+
 def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     st.markdown("""
         <div style="margin-bottom: 2rem;">
@@ -130,17 +148,42 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             focus_pipe = load_focus_model(FOCUS_MODEL_PATH)
             risk_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
             
-            pred_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf}])
+            # Build and sanitize prediction DataFrames before passing to sklearn pipelines.
+            # This prevents regex errors in text transformers when values are None/NaN.
+            pred_df = _safe_predict_df(pd.DataFrame([{
+                "duration_min": float(dur),
+                "subject": str(sub),
+                "technique": str(tech),
+                "mood": float(mood),
+                "caffeine_mg": float(caf),
+            }]))
+
             raw_focus = 75.0
-            if focus_pipe: raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
+            if focus_pipe:
+                try:
+                    raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
+                except Exception as e:
+                    st.warning(f"Focus model prediction skipped: {e}")
             
             now = datetime.now()
-            risk_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf, 
-                                     "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0}])
+            risk_df = _safe_predict_df(pd.DataFrame([{
+                "duration_min": float(dur),
+                "subject": str(sub),
+                "technique": str(tech),
+                "mood": float(mood),
+                "caffeine_mg": float(caf),
+                "start_hour": float(now.hour),
+                "day_of_week": float(now.weekday()),
+                "is_weekend": 1.0 if now.weekday() >= 5 else 0.0,
+            }]))
+
             distraction_risk = 30.0
             if risk_pipe:
-                pred_count = float(risk_pipe.predict(risk_df)[0])
-                distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
+                try:
+                    pred_count = float(risk_pipe.predict(risk_df)[0])
+                    distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
+                except Exception as e:
+                    st.warning(f"Distraction model prediction skipped: {e}")
 
             est_distractions = int((distraction_risk / 80) * 3) if distraction_risk > 0 else 0
             analysis_result = processor.calculate_score(raw_focus, current_distractions=est_distractions, current_duration=dur)
