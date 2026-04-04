@@ -44,7 +44,7 @@ def _render_list_card(title: str, items: list[str], icon: str):
         for item in items:
             import re
             # 1. Strip all HTML tags
-            clean_item = re.sub(r'<[^>]+>', '', item)
+            clean_item = re.sub(r'<[^>]+>', '', str(item or ""))
             # 2. Strip bullet characters and dots
             clean_item = clean_item.replace("●", "").replace("*", "").replace("..", "").strip()
             
@@ -126,13 +126,13 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with sc2: _render_score_card(latest["distraction_risk"], "Distraction Risk", "", "--purple" if latest["distraction_risk"] > 50 else "--teal")
             
             lc1, lc2 = st.columns(2)
-            with lc1: _render_list_card("Behavioral Insights", latest["insights"].split("\n"), "🔍")
-            with lc2: _render_list_card("Actionable Suggestions", latest["suggestions"].split("\n"), "💡")
+            with lc1: _render_list_card("Behavioral Insights", (latest["insights"] or "").split("\n"), "🔍")
+            with lc2: _render_list_card("Actionable Suggestions", (latest["suggestions"] or "").split("\n"), "💡")
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
                 import re
-                clean_exp = re.sub(r'<[^>]+>', '', latest["explanation"]).replace("..", "").strip()
+                clean_exp = re.sub(r'<[^>]+>', '', str(latest["explanation"] or "")).replace("..", "").strip()
                 st.write(clean_exp)
         else:
             st.info("No analysis data available. Run your first analysis above!")
@@ -155,12 +155,12 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                     st.markdown("**Insights**")
                     import re
                     # Aggressively clean all history content
-                    raw_ins = re.sub(r'<[^>]+>', '', row["insights"]).replace("..", "").strip()
+                    raw_ins = re.sub(r'<[^>]+>', '', str(row["insights"] or "")).replace("..", "").strip()
                     for line in raw_ins.split("\n"):
                         if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
                     
                     st.markdown("**Suggestions**")
-                    raw_sug = re.sub(r'<[^>]+>', '', row["suggestions"]).replace("..", "").strip()
+                    raw_sug = re.sub(r'<[^>]+>', '', str(row["suggestions"] or "")).replace("..", "").strip()
                     for line in raw_sug.split("\n"):
                         if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
                     with st.expander("🔍 System Explanation"):
