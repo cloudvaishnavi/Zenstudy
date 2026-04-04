@@ -35,10 +35,17 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
         """, unsafe_allow_html=True)
 
 def _render_list_card(title: str, items: list[str], icon: str):
-    """Render a card with a list of items using native Streamlit columns for stability."""
+    """Render a card with a list of items, handling legacy HTML gracefully."""
     with st.container(border=True):
         st.markdown(f"#### {icon} {title}")
         st.divider()
+        
+        # Check if we have a single large source string that is HTML (edge case)
+        raw_content = "\n".join(items).strip()
+        if raw_content.startswith("<div"):
+            st.markdown(raw_content, unsafe_allow_html=True)
+            return
+
         for item in items:
             clean_item = item.strip().replace("●", "").replace("*", "").strip()
             if not clean_item: continue
@@ -145,11 +152,20 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                         st.rerun()
                     
                     st.markdown("**Insights**")
-                    for line in row["insights"].split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    raw_insights = row["insights"].strip()
+                    if raw_insights.startswith("<div"):
+                        st.markdown(raw_insights, unsafe_allow_html=True)
+                    else:
+                        for line in raw_insights.split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    
                     st.markdown("**Suggestions**")
-                    for line in row["suggestions"].split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    raw_suggestions = row["suggestions"].strip()
+                    if raw_suggestions.startswith("<div"):
+                        st.markdown(raw_suggestions, unsafe_allow_html=True)
+                    else:
+                        for line in raw_suggestions.split("\n"):
+                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
                     with st.expander("🔍 System Explanation"):
                         st.markdown(row["explanation"])
 
