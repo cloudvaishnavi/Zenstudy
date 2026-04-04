@@ -6,6 +6,7 @@ from __future__ import annotations
 import time
 import pandas as pd
 import streamlit as st
+import re
 from datetime import datetime
 
 from config import SUBJECTS, TECHNIQUES, FOCUS_HIGH, FOCUS_MEDIUM
@@ -34,23 +35,28 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
             </div>
         """, unsafe_allow_html=True)
 
+def _clean_text(text: any) -> str:
+    """Robustly clean text by stripping HTML and handling None/NaN values."""
+    if pd.isna(text) or text is None:
+        return ""
+    # Ensure it's a string
+    s = str(text)
+    # Strip HTML tags
+    s = re.sub(r'<[^>]+>', '', s)
+    # Clean up legacy formatting
+    return s.replace("●", "").replace("*", "").replace("..", "").strip()
+
 def _render_list_card(title: str, items: list[str], icon: str):
     """Render a card with a list of items, aggressively cleaning any legacy HTML."""
     with st.container(border=True):
         st.markdown(f"#### {icon} {title}")
         st.divider()
         
-        # We always clean and render as a proper list now to avoid legacy HTML issues
         for item in items:
-            import re
-            # 1. Strip all HTML tags
-            clean_item = re.sub(r'<[^>]+>', '', str(item or ""))
-            # 2. Strip bullet characters and dots
-            clean_item = clean_item.replace("●", "").replace("*", "").replace("..", "").strip()
-            
+            clean_item = _clean_text(item)
             if not clean_item: continue
             
-            # 3. Render using custom columns for premium look
+            # Render using custom columns for premium look
             bc1, bc2 = st.columns([0.05, 0.95])
             bc1.markdown(f'<div style="color: var(--blue); margin-top: 2px;">●</div>', unsafe_allow_html=True)
             bc2.markdown(f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>', unsafe_allow_html=True)
@@ -131,8 +137,7 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
-                import re
-                clean_exp = re.sub(r'<[^>]+>', '', str(latest["explanation"] or "")).replace("..", "").strip()
+                clean_exp = _clean_text(latest.get("explanation", ""))
                 st.write(clean_exp)
         else:
             st.info("No analysis data available. Run your first analysis above!")
@@ -153,16 +158,15 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                         st.rerun()
                     
                     st.markdown("**Insights**")
-                    import re
                     # Aggressively clean all history content
-                    raw_ins = re.sub(r'<[^>]+>', '', str(row["insights"] or "")).replace("..", "").strip()
-                    for line in raw_ins.split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    raw_ins_block = _clean_text(row.get("insights", ""))
+                    for line in raw_ins_block.split("\n"):
+                        if line.strip(): st.markdown(f"● {line.strip()}")
                     
                     st.markdown("**Suggestions**")
-                    raw_sug = re.sub(r'<[^>]+>', '', str(row["suggestions"] or "")).replace("..", "").strip()
-                    for line in raw_sug.split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    raw_sug_block = _clean_text(row.get("suggestions", ""))
+                    for line in raw_sug_block.split("\n"):
+                        if line.strip(): st.markdown(f"● {line.strip()}")
                     with st.expander("🔍 System Explanation"):
                         st.markdown(row["explanation"])
 
