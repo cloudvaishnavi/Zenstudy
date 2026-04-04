@@ -4,7 +4,7 @@ Run: streamlit run app.py
 """
 from __future__ import annotations
 from dotenv import load_dotenv
-load_dotenv()  # Load .env so DATABASE_URL and other secrets are available
+load_dotenv()
 
 import sys, secrets
 from pathlib import Path
@@ -46,6 +46,50 @@ st.set_page_config(
 inject_css()
 ensure_schema()
 
+# ── Focus Warning: fires when user switches tab or minimises window ──
+st.markdown("""
+<!-- ZenStudy Focus Guard -->
+<div id="zen-focus-toast"></div>
+<script>
+(function() {
+    var toast = document.getElementById('zen-focus-toast');
+    if (!toast) return;
+
+    var messages = [
+        '🧠 Stay focused! Your study session is still running.',
+        '📚 Hey! Come back — your goals need you.',
+        '⏱️ Don\'t break your flow. You\'re doing great!',
+        '🎯 Focus! Every minute counts toward your goal.',
+        '🔥 Keep your streak alive — stay on ZenStudy!',
+    ];
+    var idx = 0;
+    var hideTimer = null;
+
+    function showToast() {
+        toast.innerHTML =
+            '<div style="font-size:1.05rem; font-weight:700; color:#f1f5f9; margin-bottom:0.25rem;">' +
+            messages[idx % messages.length] +
+            '</div>' +
+            '<div style="font-size:0.8rem; color:#94a3b8;">Click anywhere to dismiss</div>';
+        toast.style.display = 'block';
+        idx++;
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(function() { toast.style.display = 'none'; }, 6000);
+    }
+
+    toast.addEventListener('click', function() { toast.style.display = 'none'; });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) showToast();
+    });
+
+    window.addEventListener('blur', function() {
+        showToast();
+    });
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # ── Master CSS ─────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -73,8 +117,6 @@ nav[data-testid="stSidebarNav"] { display:none !important; }
         transition: all 0.4s ease-in-out !important;
     }
     [data-testid="column"] { min-width:100% !important; margin-bottom: 0.8rem !important; }
-    
-    /* Make the toggle button more obvious when closed - Handled in style.py now */
 }
 .block-container { padding:4.5rem 1.8rem 3rem !important; max-width:1400px !important; }
 </style>
@@ -113,7 +155,6 @@ def show_auth() -> bool:
     }
     </style>""", unsafe_allow_html=True)
 
-    # Logo
     st.markdown(f"""
     <div style="text-align:center;margin-bottom:1.4rem">
         {LOGO.format(w=60,h=60)}
@@ -131,8 +172,6 @@ def show_auth() -> bool:
 
     if "auth_page" not in st.session_state:
         st.session_state["auth_page"] = "Login"
-
-
 
     # ── LOGIN ─────────────────────────────────────────────────
     if st.session_state["auth_page"] == "Login":
@@ -232,7 +271,6 @@ def show_auth() -> bool:
             st.session_state["auth_page"] = "Login"
             st.rerun()
 
-
     st.markdown("""<div style="text-align:center;margin-top:0.8rem;color:#3f3f46;
         font-size:0.72rem">ZenStudy — Built for focused learners</div>""",
         unsafe_allow_html=True)
@@ -268,7 +306,6 @@ if current_email == OWNER_EMAIL:
 
     from src.admin import get_admin_stats, get_all_users_df, delete_user_by_email, get_user_sessions_df, get_recent_feedback_df
     
-    # Stats
     stats = get_admin_stats()
     m1,m2,m3 = st.columns(3)
     m1.metric("Total Users",    stats["total_users"])
@@ -452,7 +489,6 @@ st.markdown(f"""
 # ══════════════════════════════════════════════════════════════
 @st.cache_data(show_spinner=False)
 def _load(uid: int) -> pd.DataFrame:
-    # DB_PATH is no longer used — Supabase is always available
     return get_sessions(uid)
 
 df_raw = _load(current_user_id)
@@ -473,7 +509,7 @@ if df_raw.empty:
 df = enrich(df_raw)
 
 # ══════════════════════════════════════════════════════════════
-#  QUICK STATS BAR (new feature — always visible at top)
+#  QUICK STATS BAR
 # ══════════════════════════════════════════════════════════════
 total_min  = int(df["duration_min"].fillna(0).sum())
 sessions_n = len(df)
@@ -497,7 +533,6 @@ if active_days:
             else:
                 break
 
-# ── Quick Stats Bar (SaaS Style) ────────────────────────────────────
 st.markdown(f"""
 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1.2rem; margin-bottom:2.5rem">
   <div class="premium-card">

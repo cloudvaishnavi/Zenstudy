@@ -109,9 +109,28 @@ def inject_css() -> None:
     [data-testid="stToolbar"] {
         visibility: visible !important;
     }
-    .stDeployButton, #GithubIcon { 
-        display: none !important; 
+
+    /* ── Hide GitHub icon and deploy button — all known selectors ── */
+    .stDeployButton,
+    #GithubIcon,
+    [data-testid="stToolbarActionButton"],
+    button[kind="header"],
+    a[href*="github"],
+    [title*="GitHub"],
+    [title*="github"],
+    [aria-label*="GitHub"],
+    [aria-label*="github"],
+    [data-testid="stToolbar"] a,
+    [data-testid="stToolbar"] button:not([data-testid="stHeaderSidebarControl"]) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
     }
+
     footer { visibility: hidden !important; }
 
     /* Glassmorphism Sidebar */
@@ -297,13 +316,37 @@ def inject_css() -> None:
         animation: neon-pulse 2s infinite ease-in-out;
         border: 1px solid var(--blue) !important;
     }
+
+    /* ── Focus Warning Toast ── */
+    #zen-focus-toast {
+        display: none;
+        position: fixed;
+        top: 1.2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999999;
+        background: linear-gradient(135deg, rgba(15,23,42,0.97), rgba(12,26,46,0.97));
+        border: 1px solid rgba(56,189,248,0.5);
+        border-left: 4px solid #f59e0b;
+        border-radius: 14px;
+        padding: 0.9rem 1.5rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.2);
+        backdrop-filter: blur(20px);
+        min-width: 280px;
+        max-width: 90vw;
+        text-align: center;
+        animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes toastIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.92); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1);    }
+    }
     </style>
     <div data-theme="{'light' if st.session_state.get('light_mode') else 'dark'}"></div>
     """, unsafe_allow_html=True)
 
 
 def kpi_card(icon: str, value: str, label: str, color: str = "#38bdf8") -> str:
-    # A frosty, glowing premium card
     return f"""
     <div style="
         background: rgba(17, 17, 21, 0.5);
@@ -342,14 +385,12 @@ def hero_banner(email: str) -> None:
         overflow: hidden;
         box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     ">
-        <!-- Glowing Orbs inside the glass div -->
         <div style="position:absolute; top:-60px; right:-40px; width:250px; height:250px;
              background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 60%);
              border-radius: 50%; pointer-events: none; filter: blur(30px);"></div>
         <div style="position:absolute; bottom:-50px; left:25%; width:200px; height:200px;
              background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 60%);
              border-radius: 50%; pointer-events: none; filter: blur(30px);"></div>
-             
         <div style="flex-shrink:0; transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(56,189,248,0.3));">
             {LOGO_SVG}
         </div>
