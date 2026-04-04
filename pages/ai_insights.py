@@ -51,16 +51,46 @@ def _clean_text(text: any) -> str:
     # Clean up legacy formatting
     return s.replace("●", "").replace("*", "").replace("..", "").strip()
 
-def _render_list_card(title: str, items: list[str], icon: str):
+def _render_list_card(title: str, items: any, icon: str):
     """Render a card with a list of items, aggressively cleaning any legacy HTML."""
     with st.container(border=True):
         st.markdown(f"#### {icon} {title}")
         st.divider()
         
+        import re
+        import pandas as pd
+        
+        safe_items = []
+        # Ensure items is iterable
+        if items is None or (not isinstance(items, (list, tuple))):
+            if items and not pd.isna(items):
+                items = [str(items)]
+            else:
+                items = []
+
         for item in items:
-            clean_item = _clean_text(item)
-            if not clean_item: continue
+            if item is None or pd.isna(item):
+                continue
             
+            # 1. Ensure it's a string
+            item_str = str(item)
+            # 2. Strip HTML tags safely
+            try:
+                clean = re.sub(r'<[^>]+>', '', item_str).strip()
+            except Exception:
+                clean = item_str.strip()
+            
+            # 3. Final cleanup of bullets/dots
+            clean = clean.replace("●", "").replace("*", "").replace("..", "").strip()
+            
+            if clean:
+                safe_items.append(clean)
+        
+        if not safe_items:
+            st.caption("No data available.")
+            return
+
+        for clean_item in safe_items:
             # Render using custom columns for premium look
             bc1, bc2 = st.columns([0.05, 0.95])
             bc1.markdown(f'<div style="color: var(--blue); margin-top: 2px;">●</div>', unsafe_allow_html=True)
@@ -144,12 +174,28 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             with sc2: _render_score_card(risk_score, "Distraction Risk", "", "--purple" if risk_score > 50 else "--teal")
             
             lc1, lc2 = st.columns(2)
-            with lc1: _render_list_card("Behavioral Insights", safe_text(latest.get("insights")).split("\n"), "🔍")
-            with lc2: _render_list_card("Actionable Suggestions", safe_text(latest.get("suggestions")).split("\n"), "💡")
+            
+            # Use safe retrieval for lists exactly as user suggested
+            def get_safe_list(val):
+                import pandas as pd
+                if val is None or pd.isna(val):
+                    return []
+                # Handle case where it might already be a list from DB
+                if isinstance(val, (list, tuple)):
+                    return val
+                return str(val).split("\n")
+
+            with lc1: _render_list_card("Behavioral Insights", get_safe_list(latest.get("insights")), "🔍")
+            with lc2: _render_list_card("Actionable Suggestions", get_safe_list(latest.get("suggestions")), "💡")
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
-                clean_exp = _clean_text(latest.get("explanation"))
+                # Step 3: Final Version of Explanation fix
+                exp = latest.get("explanation")
+                if exp is None or pd.isna(exp):
+                    exp = ""
+                exp = str(exp)
+                clean_exp = re.sub(r'<[^>]+>', '', exp).replace("..", "").strip()
                 st.write(clean_exp if clean_exp else "No explanation available.")
         else:
             st.info("No analysis data available. Run your first analysis above!")
@@ -175,17 +221,19 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                         st.rerun()
                     
                     st.markdown("**Insights**")
-                    # Aggressively clean all history content
-                    raw_ins_block = _clean_text(row.get("insights", ""))
-                    for line in raw_ins_block.split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip()}")
+                    # Aggressively clean all history content using the safe logic
+                    h_ins = get_safe_list(row.get("insights"))
+                    for item in h_ins:
+                        c_item = _clean_text(item)
+                        if c_item: st.markdown(f"● {c_item}")
                     
                     st.markdown("**Suggestions**")
-                    raw_sug_block = _clean_text(row.get("suggestions", ""))
-                    for line in raw_sug_block.split("\n"):
-                        if line.strip(): st.markdown(f"● {line.strip()}")
+                    h_sug = get_safe_list(row.get("suggestions"))
+                    for item in h_sug:
+                        c_sug = _clean_text(item)
+                        if c_sug: st.markdown(f"● {c_sug}")
                     with st.expander("🔍 System Explanation"):
-                        st.markdown(_clean_text(row.get("explanation", "")))
+                        st.markdown(_clean_text(row.get("explanation")))
 
     st.markdown("---")
     section_header("🤖 AI Study Coach")
