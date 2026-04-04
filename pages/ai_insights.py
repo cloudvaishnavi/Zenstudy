@@ -35,28 +35,22 @@ def _render_score_card(score: float, label: str, icon: str, color_var: str):
         """, unsafe_allow_html=True)
 
 def _render_list_card(title: str, items: list[str], icon: str):
-    """Render a card with a list of items, handling legacy HTML gracefully."""
+    """Render a card with a list of items, aggressively cleaning any legacy HTML."""
     with st.container(border=True):
         st.markdown(f"#### {icon} {title}")
         st.divider()
         
-        # Check if we have a single large source string that is HTML (edge case)
-        raw_content = "\n".join(items).strip()
-        if raw_content.startswith("<div"):
-            st.markdown(raw_content, unsafe_allow_html=True)
-            return
-
+        # We always clean and render as a proper list now to avoid legacy HTML issues
         for item in items:
-            # Aggressively clean legacy HTML and separators
-            clean_item = item.strip().replace("●", "").replace("*", "").strip()
-            # Remove any legacy <div> tags or multi-dots that might be in the DB
             import re
-            clean_item = re.sub(r'<[^>]+>', '', clean_item) # Strip all HTML tags
-            clean_item = clean_item.replace("..", "").strip() # Remove dots used as separators
+            # 1. Strip all HTML tags
+            clean_item = re.sub(r'<[^>]+>', '', item)
+            # 2. Strip bullet characters and dots
+            clean_item = clean_item.replace("●", "").replace("*", "").replace("..", "").strip()
             
             if not clean_item: continue
             
-            # Using columns for the bullet point layout - 100% stable
+            # 3. Render using custom columns for premium look
             bc1, bc2 = st.columns([0.05, 0.95])
             bc1.markdown(f'<div style="color: var(--blue); margin-top: 2px;">●</div>', unsafe_allow_html=True)
             bc2.markdown(f'<div style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.5;">{clean_item}</div>', unsafe_allow_html=True)
@@ -138,7 +132,9 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
             
             with st.container(border=True):
                 st.markdown("#### 🧠 AI Explanation")
-                st.write(latest["explanation"])
+                import re
+                clean_exp = re.sub(r'<[^>]+>', '', latest["explanation"]).replace("..", "").strip()
+                st.write(clean_exp)
         else:
             st.info("No analysis data available. Run your first analysis above!")
 
@@ -158,26 +154,16 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
                         st.rerun()
                     
                     st.markdown("**Insights**")
-                    raw_insights = row["insights"].strip()
-                    if raw_insights.startswith("<div"):
-                        import re
-                        raw_insights = re.sub(r'<[^>]+>', '', raw_insights).replace("..", "").strip()
-                        for line in raw_insights.split("\n"):
-                            if line.strip(): st.markdown(f"● {line.strip()}")
-                    else:
-                        for line in raw_insights.split("\n"):
-                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    import re
+                    # Aggressively clean all history content
+                    raw_ins = re.sub(r'<[^>]+>', '', row["insights"]).replace("..", "").strip()
+                    for line in raw_ins.split("\n"):
+                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
                     
                     st.markdown("**Suggestions**")
-                    raw_suggestions = row["suggestions"].strip()
-                    if raw_suggestions.startswith("<div"):
-                        import re
-                        raw_suggestions = re.sub(r'<[^>]+>', '', raw_suggestions).replace("..", "").strip()
-                        for line in raw_suggestions.split("\n"):
-                            if line.strip(): st.markdown(f"● {line.strip()}")
-                    else:
-                        for line in raw_suggestions.split("\n"):
-                            if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
+                    raw_sug = re.sub(r'<[^>]+>', '', row["suggestions"]).replace("..", "").strip()
+                    for line in raw_sug.split("\n"):
+                        if line.strip(): st.markdown(f"● {line.strip().replace('●','')}")
                     with st.expander("🔍 System Explanation"):
                         st.markdown(row["explanation"])
 
