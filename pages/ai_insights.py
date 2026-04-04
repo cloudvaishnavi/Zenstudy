@@ -66,55 +66,54 @@ def render(df: pd.DataFrame, current_email: str, current_user_id: int) -> None:
     tab1, tab2 = st.tabs(["⚡ Run Analysis", "📜 Analysis History"])
 
     with tab1:
-        with st.container(border=True):
-            st.markdown("#### ⚙️ Analysis Parameters")
-            c1, c2, c3 = st.columns(3)
-            sub = c1.selectbox("Current Subject", SUBJECTS, key="ana_sub_v3")
-            tech = c2.selectbox("Preferred Technique", TECHNIQUES, key="ana_tech_v3")
-            dur = c3.number_input("Target Duration (min)", min_value=10, step=5, value=60, key="ana_dur_v3")
+        st.markdown("#### ⚙️ Analysis Parameters")
+        c1, c2, c3 = st.columns(3)
+        sub = c1.selectbox("Current Subject", SUBJECTS, key="ana_sub_v3")
+        tech = c2.selectbox("Preferred Technique", TECHNIQUES, key="ana_tech_v3")
+        dur = c3.number_input("Target Duration (min)", min_value=10, step=5, value=60, key="ana_dur_v3")
+        
+        c4, c5 = st.columns(2)
+        mood = c4.slider("Current Mood", 1, 5, 4, key="ana_mood_v3")
+        caf = c5.number_input("Caffeine Intake (mg)", min_value=0, step=10, value=100, key="ana_caf_v3")
+        
+        if st.button("Start Analysis 🚀", type="primary", use_container_width=True, key="ana_btn_v4"):
+            status = st.empty()
+            progress = st.progress(0)
+            steps = ["🔐 Secure Processing...", "🔍 Pattern Scan...", "🧠 Focus Model...", "📈 Risk Assessment...", "✨ Insight Generation..."]
+            for i, step in enumerate(steps):
+                status.write(f"**{step}**")
+                progress.progress((i + 1) / len(steps))
+                time.sleep(0.3)
             
-            c4, c5 = st.columns(2)
-            mood = c4.slider("Current Mood", 1, 5, 4, key="ana_mood_v3")
-            caf = c5.number_input("Caffeine Intake (mg)", min_value=0, step=10, value=100, key="ana_caf_v3")
+            processor = AIProcessor(df)
+            focus_pipe = load_focus_model(FOCUS_MODEL_PATH)
+            risk_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
             
-            if st.button("Start Analysis 🚀", type="primary", use_container_width=True, key="ana_btn_v4"):
-                status = st.empty()
-                progress = st.progress(0)
-                steps = ["🔐 Secure Processing...", "🔍 Pattern Scan...", "🧠 Focus Model...", "📈 Risk Assessment...", "✨ Insight Generation..."]
-                for i, step in enumerate(steps):
-                    status.write(f"**{step}**")
-                    progress.progress((i + 1) / len(steps))
-                    time.sleep(0.3)
-                
-                processor = AIProcessor(df)
-                focus_pipe = load_focus_model(FOCUS_MODEL_PATH)
-                risk_pipe = load_distraction_model(DISTRACTION_MODEL_PATH)
-                
-                pred_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf}])
-                raw_focus = 75.0
-                if focus_pipe: raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
-                
-                now = datetime.now()
-                risk_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf, 
-                                         "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0}])
-                distraction_risk = 30.0
-                if risk_pipe:
-                    pred_count = float(risk_pipe.predict(risk_df)[0])
-                    distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
+            pred_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf}])
+            raw_focus = 75.0
+            if focus_pipe: raw_focus = max(0.0, min(100.0, float(focus_pipe.predict(pred_df)[0])))
+            
+            now = datetime.now()
+            risk_df = pd.DataFrame([{"duration_min": dur, "subject": sub, "technique": tech, "mood": mood, "caffeine_mg": caf, 
+                                     "start_hour": float(now.hour), "day_of_week": float(now.weekday()), "is_weekend": 1.0 if now.weekday() >= 5 else 0.0}])
+            distraction_risk = 30.0
+            if risk_pipe:
+                pred_count = float(risk_pipe.predict(risk_df)[0])
+                distraction_risk = min(100.0, (pred_count / 3.0) * 80) if pred_count > 0 else 5.0
 
-                est_distractions = int((distraction_risk / 80) * 3) if distraction_risk > 0 else 0
-                analysis_result = processor.calculate_score(raw_focus, current_distractions=est_distractions, current_duration=dur)
-                patterns = processor.detect_patterns()
-                explanation = processor.generate_explanation(analysis_result, patterns)
-                recs = generate_recommendations(df, focus_score=raw_focus, distraction_risk=distraction_risk)
-                
-                insert_ai_analysis({
-                    "user_id": current_user_id, "input_summary": f"{sub} | {tech} | {dur} min",
-                    "productivity_score": analysis_result["score"], "distraction_risk": distraction_risk,
-                    "insights": "\n".join(patterns), "suggestions": "\n".join(recs), "explanation": explanation
-                })
-                st.success("Analysis Complete!")
-                st.rerun()
+            est_distractions = int((distraction_risk / 80) * 3) if distraction_risk > 0 else 0
+            analysis_result = processor.calculate_score(raw_focus, current_distractions=est_distractions, current_duration=dur)
+            patterns = processor.detect_patterns()
+            explanation = processor.generate_explanation(analysis_result, patterns)
+            recs = generate_recommendations(df, focus_score=raw_focus, distraction_risk=distraction_risk)
+            
+            insert_ai_analysis({
+                "user_id": current_user_id, "input_summary": f"{sub} | {tech} | {dur} min",
+                "productivity_score": analysis_result["score"], "distraction_risk": distraction_risk,
+                "insights": "\n".join(patterns), "suggestions": "\n".join(recs), "explanation": explanation
+            })
+            st.success("Analysis Complete!")
+            st.rerun()
 
         history = get_ai_history(current_user_id)
         if not history.empty:
